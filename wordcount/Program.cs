@@ -6,9 +6,9 @@ using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
-var summary = BenchmarkRunner.Run(typeof(Foo));
+// var summary = BenchmarkRunner.Run(typeof(Foo));
 
-// var f = new Foo();
+var f = new Foo();
 // var counts = new Counts[]
 // {
 //     f.File_ReadAllLines(),
@@ -24,8 +24,8 @@ var summary = BenchmarkRunner.Run(typeof(Foo));
 //     Console.WriteLine($"{count.Line} {count.Word} {count.Character}");
 // }
 
-// var count = f.File_OpenHandle_RandomAccess_IndexOf();
-// Console.WriteLine($"{count.Line} {count.Word} {count.Character}");
+var count = f.File_OpenHandle_RandomAccess_IndexOf();
+Console.WriteLine($"{count.Line} {count.Word} {count.Character}");
 
 public record struct Counts(int Line, int Word, int Character);
 
@@ -240,6 +240,8 @@ public class Foo
     {
         const byte NEWLINE = (byte)'\n';
         const byte SPACE = (byte)' ';
+        
+        ReadOnlySpan<byte> searchChars = stackalloc[] {SPACE, NEWLINE};
         int wordCount = 0;
         int lineCount = 0;
         int charCount = 0;
@@ -269,9 +271,7 @@ public class Foo
             while (text.Length > 0)
             {
                 bool isSpace = char.IsWhiteSpace((char)text[0]);
-                int nextSpace = text.IndexOf(SPACE);
-                int nextNewline = text.IndexOf(NEWLINE);
-                bool isSpaceCloser = nextSpace > -1 && (nextNewline is -1 || nextNewline > nextSpace);
+                int indexOf = text.IndexOfAny(searchChars);
                 int nextIndex = 0;
 
                 if (wasSpace && !isSpace)
@@ -291,14 +291,14 @@ public class Foo
                     wasSpace = true;
                     lineCount++;
                 }
-                else if (isSpaceCloser)
+                else if (indexOf > -1 && text[indexOf] is SPACE)
                 {
-                    nextIndex = nextSpace + 1;
+                    nextIndex = indexOf + 1;
                     wasSpace = true;
                 }
-                else if (nextNewline > 0)
+                else if (indexOf > -1)
                 {
-                    nextIndex = nextNewline + 1;
+                    nextIndex = indexOf + 1;
                     lineCount++;                   
                     wasSpace = true;
                 }

@@ -58,12 +58,19 @@ Note: `File_OpenHandle_RandomAccess_IndexOf` was used as the implementation for 
 ## Performance with Benchmarkdotnet
 
 ```
-|                               Method |     Mean |     Error |    StdDev | Ratio | RatioSD |     Gen0 |     Gen1 |    Gen2 | Allocated | Alloc Ratio |
-|------------------------------------- |---------:|----------:|----------:|------:|--------:|---------:|---------:|--------:|----------:|------------:|
-|                    File_ReadAllLines | 3.680 ms | 0.0185 ms | 0.0164 ms |  2.04 |    0.02 | 277.3438 | 195.3125 | 93.7500 | 1948923 B |    3,677.21 |
-|                       File_ReadLines | 2.849 ms | 0.0335 ms | 0.0313 ms |  1.58 |    0.02 | 378.9063 |        - |       - | 1592707 B |    3,005.11 |
-|                        File_OpenText | 2.940 ms | 0.0304 ms | 0.0284 ms |  1.63 |    0.02 | 378.9063 |        - |       - | 1592651 B |    3,005.00 |
-|                            File_Open | 1.988 ms | 0.0190 ms | 0.0178 ms |  1.10 |    0.01 |        - |        - |       - |     684 B |        1.29 |
-|         File_OpenHandle_RandomAccess | 1.803 ms | 0.0116 ms | 0.0109 ms |  1.00 |    0.00 |        - |        - |       - |     530 B |        1.00 |
-| File_OpenHandle_RandomAccess_IndexOf | 1.240 ms | 0.0239 ms | 0.0265 ms |  0.69 |    0.02 |        - |        - |       - |     530 B |        1.00 |
+BenchmarkDotNet=v0.13.5, OS=ubuntu 22.04
+Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cores
+.NET SDK=7.0.105
+  [Host]     : .NET 7.0.5 (7.0.523.17801), X64 RyuJIT AVX2
+  DefaultJob : .NET 7.0.5 (7.0.523.17801), X64 RyuJIT AVX2
+
+
+|                               Method |       Mean |    Error |   StdDev | Ratio |     Gen0 |     Gen1 |    Gen2 | Allocated | Alloc Ratio |
+|------------------------------------- |-----------:|---------:|---------:|------:|---------:|---------:|--------:|----------:|------------:|
+|                    File_ReadAllLines | 3,657.5 us |  9.05 us |  7.55 us |  2.05 | 277.3438 | 195.3125 | 93.7500 | 1948922 B |    3,677.21 |
+|                       File_ReadLines | 2,825.8 us |  6.39 us |  5.98 us |  1.58 | 378.9063 |        - |       - | 1592707 B |    3,005.11 |
+|                        File_OpenText | 2,923.6 us | 15.67 us | 14.66 us |  1.64 | 378.9063 |        - |       - | 1592651 B |    3,005.00 |
+|                            File_Open | 1,973.6 us |  1.92 us |  1.79 us |  1.11 |        - |        - |       - |     684 B |        1.29 |
+|         File_OpenHandle_RandomAccess | 1,784.0 us |  5.40 us |  4.51 us |  1.00 |        - |        - |       - |     530 B |        1.00 |
+| File_OpenHandle_RandomAccess_IndexOf |   844.2 us |  2.78 us |  2.32 us |  0.47 |        - |        - |       - |     529 B |        1.00 |
 ```
