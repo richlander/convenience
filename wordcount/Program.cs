@@ -188,7 +188,8 @@ public class Foo
 
         using var handle = File.OpenHandle(FilePath);
         int size = 16 * 1024;
-        Span<byte> buffer = stackalloc byte[size];
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(size);
+        Span<byte> buffer = rentedArray;
         ReadOnlySpan<byte> text = buffer;
 
         bool wasSpace = true;
