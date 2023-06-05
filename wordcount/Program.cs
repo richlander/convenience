@@ -2,13 +2,14 @@
 // "The code"
 // For space between "The" and "code"
 
+using System.Buffers;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 
-// var summary = BenchmarkRunner.Run(typeof(Foo));
+var summary = BenchmarkRunner.Run(typeof(Foo));
 
-var f = new Foo();
+// var f = new Foo();
 // var counts = new Counts[]
 // {
 //     f.File_ReadAllLines(),
@@ -24,8 +25,8 @@ var f = new Foo();
 //     Console.WriteLine($"{count.Line} {count.Word} {count.Character}");
 // }
 
-var count = f.File_OpenHandle_RandomAccess_IndexOf();
-Console.WriteLine($"{count.Line} {count.Word} {count.Character}");
+// var count = f.File_OpenHandle_RandomAccess_IndexOf();
+// Console.WriteLine($"{count.Line} {count.Word} {count.Character}");
 
 public record struct Counts(int Line, int Word, int Character);
 
@@ -33,6 +34,7 @@ public record struct Counts(int Line, int Word, int Character);
 public class Foo
 { 
     string FilePath = "text.txt";
+    int Size = 16 * 1024;
 
     [Benchmark]
     public Counts File_ReadAllLines()
@@ -134,8 +136,8 @@ public class Foo
         int charCount = 0;
 
         using var stream = File.Open(FilePath, FileMode.Open, FileAccess.Read);
-        int size = 16 * 1024;
-        Span<byte> buffer = stackalloc byte[size];
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Size);
+        Span<byte> buffer = rentedArray;
         ReadOnlySpan<byte> text = buffer;
 
         bool wasSpace = true;
@@ -175,6 +177,7 @@ public class Foo
             }
         }
 
+        ArrayPool<byte>.Shared.Return(rentedArray);
         return new(lineCount, wordCount, charCount);
     }
 
@@ -187,8 +190,7 @@ public class Foo
         int charCount = 0;
 
         using var handle = File.OpenHandle(FilePath);
-        int size = 16 * 1024;
-        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(size);
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Size);
         Span<byte> buffer = rentedArray;
         ReadOnlySpan<byte> text = buffer;
 
@@ -233,6 +235,7 @@ public class Foo
             }
         }
 
+        ArrayPool<byte>.Shared.Return(rentedArray);
         return new(lineCount, wordCount, charCount);
     }
 
@@ -248,8 +251,8 @@ public class Foo
         int charCount = 0;
 
         using var handle = File.OpenHandle(FilePath);
-        int size = 16 * 1024;
-        Span<byte> buffer = stackalloc byte[size];
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Size);
+        Span<byte> buffer = rentedArray;
         ReadOnlySpan<byte> text = buffer;
 
         int totalBytes = 0;
@@ -313,6 +316,7 @@ public class Foo
             }
         }
 
+        ArrayPool<byte>.Shared.Return(rentedArray);
         return new(lineCount, wordCount, charCount);
     }
 }
