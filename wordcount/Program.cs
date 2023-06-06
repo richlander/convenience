@@ -188,7 +188,6 @@ public class Foo
         while ((read = RandomAccess.Read(handle, buffer, totalBytes)) > 0)
         {
             totalBytes += read;
-
             text = buffer.Slice(0, read);
             
             while (text.Length > 0)
