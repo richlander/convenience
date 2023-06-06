@@ -4,13 +4,10 @@ This code explores the convenience spectrum of File I/O APIs. The app is intende
 
 The same word counting behavior is written multiple ways, using the following APIs, most to least convenience (AKA high to low level).
 
-* `File.ReadAllLines+string[]`
 * `File.ReadLines+IEnumerable<string>`
 * `File.OpenText+StreamReader.ReadLine`
 * `File.Open+FileStream.Read`
 * `File.OpenHandle+RandomAccess.Read`
-
-There are two different approaches using `RandomAccess.Read`.
 
 The included [`text.txt`](text.txt) file is a copy of [Clarissa Harlowe; or the history of a young lady — Volume 1 by Samuel Richardson](https://www.gutenberg.org/ebooks/9296). This text was chosen because it was on a list of long books and was freely available on [Project Gutenberg](https://www.gutenberg.org/).
 
@@ -28,13 +25,11 @@ $ wc text.txt
 $ dotnet run -c Release
 11716 110023 587080
 11716 110023 587080
-11716 110023 587080
-11716 110023 598796
 11716 110023 598796
 11716 110023 598796
 ```
 
-The character counts don't match for the implementations using the high-level APIs. This is due to a combination of control characters, including newlines that are elided by these APIs. There wasn't any obvious way to rememdy that (beyond adding the line count to the character count). `wc` is written using low-level approaches, so is most directly comparable to the most low-level .NET APIs.
+The character counts don't match `wc` for the implementations using the high-level APIs. This is due to a combination of control characters, including newlines that are elided by these APIs. There wasn't any obvious way to rememdy that (beyond adding the line count to the character count). `wc` is written using low-level approaches, so is most directly comparable to the most low-level .NET APIs.
 
 ## Performance with `time`
 
@@ -53,7 +48,7 @@ user	0m0.036s
 sys	0m0.012s
 ```
 
-Note: `File_OpenHandle_RandomAccess_IndexOf` was used as the implementation for the `wordcount` tool
+Note: `File_OpenHandle_RandomAccess` was used as the implementation for the `wordcount` tool
 
 ## Performance with Benchmarkdotnet
 
