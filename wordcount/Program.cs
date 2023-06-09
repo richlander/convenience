@@ -6,24 +6,26 @@ using System.Buffers;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Microsoft.CodeAnalysis.Text;
 
-// var summary = BenchmarkRunner.Run(typeof(Foo));
+BenchmarkRunner.Run(typeof(Foo));
 
-var f = new Foo();
-var counts = new Counts[]
-{
-    f.File_ReadLines(),
-    f.File_OpenText(),
-    f.File_Open(),
-    f.File_OpenHandle_RandomAccess(),
-};
+// var f = new Foo();
+// var counts = new Counts[]
+// {
+//     f.File_ReadLines(),
+//     f.File_OpenText(),
+//     f.File_Open(),
+//     f.File_OpenHandle(),
+//     f.File_OpenHandle_Range(),
+// };
 
-foreach (var count in counts)
-{
-    Console.WriteLine($"{count.Line} {count.Word} {count.Character}");
-}
+// foreach (var count in counts)
+// {
+//     Console.WriteLine($"{count.Line} {count.Word} {count.Character}");
+// }
 
-// var count = f.File_OpenHandle_RandomAccess_IndexOf();
+// var count = f.File_OpenHandle();
 // Console.WriteLine($"{count.Line} {count.Word} {count.Character}");
 
 public record struct Counts(int Line, int Word, int Character);
@@ -34,7 +36,7 @@ public class Foo
     string FilePath = "text.txt";
     int Size = 16 * 1024;
 
-    [Benchmark(Baseline = true)]
+    // [Benchmark]s
     public Counts File_ReadLines()
     {
         int wordCount = 0;
@@ -63,7 +65,7 @@ public class Foo
         return new(lineCount, wordCount, charCount);
     }
 
-    [Benchmark]
+    // [Benchmark]
     public Counts File_OpenText()
     {
         int wordCount = 0;
@@ -103,70 +105,75 @@ public class Foo
 
         int wordCount = 0;
         int lineCount = 0;
-        int charCount = 0;
+        int byteCount = 0;
+        int read = 0;
+        bool wasSpace = true;
 
         using var stream = File.Open(FilePath, FileMode.Open, FileAccess.Read);
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Size);
         Span<byte> buffer = rentedArray;
         ReadOnlySpan<byte> text = buffer;
 
-        bool wasSpace = true;
-
-        int read = 0;
         while ((read = stream.Read(buffer)) > 0)
         {                
+            byteCount += read;
             text = buffer.Slice(0, read);
             
             while (text.Length > 0)
             {
-                bool isSpace = char.IsWhiteSpace((char)text[0]);
-                int indexOf = text.IndexOfAny(searchChars);
-                int nextIndex = 0;
-
-                if (wasSpace && !isSpace)
-                {
-                    wordCount++;
-                }
-
-                wasSpace = isSpace;
-
                 if (text[0] is SPACE)
                 {
-                    nextIndex = 1;
+                    wasSpace = true;
+                    text = text.Slice(1);
+                    continue;
                 }
                 else if (text[0] is NEWLINE)
                 {
-                    nextIndex = 1;
                     wasSpace = true;
+                    text = text.Slice(1);
                     lineCount++;
+                    continue;
                 }
-                else if (indexOf > -1 && text[indexOf] is SPACE)
+                else if (wasSpace)
                 {
-                    nextIndex = indexOf + 1;
-                    wasSpace = true;
+                    wasSpace = false;
+                    wordCount++;
                 }
-                else if (indexOf > -1)
+
+                int nextIndex = 0;
+                int indexOf = text.IndexOfAny(searchChars);
+
+                if (indexOf > -1)
                 {
-                    nextIndex = indexOf + 1;
-                    lineCount++;                   
                     wasSpace = true;
+                    nextIndex = indexOf + 1;
+
+                    if (text[indexOf] is NEWLINE)
+                    {
+                        lineCount++;       
+                    }
                 }
                 else
                 {
+                    if (wasSpace)
+                    {
+                        wordCount++;
+                    }
+
+                    wasSpace = false;
                     nextIndex = text.Length;
                 }
 
                 text = text.Slice(nextIndex);
-                charCount += nextIndex;
             }
         }
 
         ArrayPool<byte>.Shared.Return(rentedArray);
-        return new(lineCount, wordCount, charCount);
+        return new(lineCount, wordCount, byteCount);
     }
 
     [Benchmark]
-    public Counts File_OpenHandle_RandomAccess()
+    public Counts File_OpenHandle()
     {
         const byte NEWLINE = (byte)'\n';
         const byte SPACE = (byte)' ';
@@ -174,67 +181,146 @@ public class Foo
 
         int wordCount = 0;
         int lineCount = 0;
-        int charCount = 0;
+        int byteCount = 0;
+        int read = 0;
+        bool wasSpace = true;
 
         using var handle = File.OpenHandle(FilePath);
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Size);
         Span<byte> buffer = rentedArray;
         ReadOnlySpan<byte> text = buffer;
 
-        int totalBytes = 0;
-        int read = 0;
-        bool wasSpace = true;
-
-        while ((read = RandomAccess.Read(handle, buffer, totalBytes)) > 0)
+        while ((read = RandomAccess.Read(handle, buffer, byteCount)) > 0)
         {
-            totalBytes += read;
+            byteCount += read;
             text = buffer.Slice(0, read);
             
             while (text.Length > 0)
             {
-                bool isSpace = char.IsWhiteSpace((char)text[0]);
-                int indexOf = text.IndexOfAny(searchChars);
-                int nextIndex = 0;
-
-                if (wasSpace && !isSpace)
-                {
-                    wordCount++;
-                }
-
-                wasSpace = isSpace;
-
                 if (text[0] is SPACE)
                 {
-                    nextIndex = 1;
+                    wasSpace = true;
+                    text = text.Slice(1);
+                    continue;
                 }
                 else if (text[0] is NEWLINE)
                 {
-                    nextIndex = 1;
                     wasSpace = true;
+                    text = text.Slice(1);
                     lineCount++;
+                    continue;
                 }
-                else if (indexOf > -1 && text[indexOf] is SPACE)
+                else if (wasSpace)
                 {
-                    nextIndex = indexOf + 1;
-                    wasSpace = true;
+                    wasSpace = false;
+                    wordCount++;
                 }
-                else if (indexOf > -1)
+
+                int nextIndex = 0;
+                int indexOf = text.IndexOfAny(searchChars);
+
+                if (indexOf > -1)
                 {
-                    nextIndex = indexOf + 1;
-                    lineCount++;                   
                     wasSpace = true;
+                    nextIndex = indexOf + 1;
+
+                    if (text[indexOf] is NEWLINE)
+                    {
+                        lineCount++;       
+                    }
                 }
                 else
                 {
+                    if (wasSpace)
+                    {
+                        wordCount++;
+                    }
+
+                    wasSpace = false;
                     nextIndex = text.Length;
                 }
 
                 text = text.Slice(nextIndex);
-                charCount += nextIndex;
             }
         }
 
         ArrayPool<byte>.Shared.Return(rentedArray);
-        return new(lineCount, wordCount, charCount);
+        return new(lineCount, wordCount, byteCount);
+    }
+
+    [Benchmark]
+    public Counts File_OpenHandle_Range()
+    {
+        const byte NEWLINE = (byte)'\n';
+        const byte SPACE = (byte)' ';
+        ReadOnlySpan<byte> searchChars = stackalloc[] {SPACE, NEWLINE};
+
+        int wordCount = 0;
+        int lineCount = 0;
+        int byteCount = 0;
+        int read = 0;
+        bool wasSpace = true;
+
+        using var handle = File.OpenHandle(FilePath);
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Size);
+        Span<byte> buffer = rentedArray;
+        ReadOnlySpan<byte> text = buffer;
+
+        while ((read = RandomAccess.Read(handle, buffer, byteCount)) > 0)
+        {
+            byteCount += read;
+            text = buffer[0..read];
+            
+            while (text.Length > 0)
+            {
+                if (text[0] is SPACE)
+                {
+                    wasSpace = true;
+                    text = text[1..];
+                    continue;
+                }
+                else if (text[0] is NEWLINE)
+                {
+                    wasSpace = true;
+                    text = text[1..];
+                    lineCount++;
+                    continue;
+                }
+                else if (wasSpace)
+                {
+                    wasSpace = false;
+                    wordCount++;
+                }
+
+                int nextIndex = 0;
+                int indexOf = text.IndexOfAny(searchChars);
+
+                if (indexOf > -1)
+                {
+                    wasSpace = true;
+                    nextIndex = indexOf + 1;
+
+                    if (text[indexOf] is NEWLINE)
+                    {
+                        lineCount++;       
+                    }
+                }
+                else
+                {
+                    if (wasSpace)
+                    {
+                        wordCount++;
+                    }
+
+                    wasSpace = false;
+                    nextIndex = text.Length;
+                }
+
+                text = text[nextIndex..];
+            }
+        }
+
+        ArrayPool<byte>.Shared.Return(rentedArray);
+        return new(lineCount, wordCount, byteCount);
     }
 }
