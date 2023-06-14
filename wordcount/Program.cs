@@ -9,13 +9,16 @@ using Microsoft.CodeAnalysis.Text;
 #pragma warning disable CA1050
 #pragma warning disable CA1822
 
-// BenchmarkRunner.Run(typeof(CountOneFile));
+BenchmarkRunner.Run(typeof(CountOneFile));
+// BenchmarkRunner.Run(typeof(CountMultiFile));
 
-// var counts = CountMultiFile.Count_File_OpenHandle(CountMultiFile.DirectoryPath);
+// string path = args[0] ?? CountMultiFile.DirectoryPath;
+// var counts = CountMultiFile.Count_File_OpenHandle(path);
 // CountMultiFile.PrintCounts(counts);
 
-var counts = CountOneFile.Count_File_OpenHandle(CountOneFile.FilePath);
-CountOneFile.PrintCounts(counts);
+// string path = args[0] ?? CountOneFile.FilePath;
+// var counts = CountOneFile.Count_File_OpenHandle(path);
+// CountOneFile.PrintCounts(counts);
 
 // var f = new CountOneFile();
 // var counts = new Counts[]
@@ -31,17 +34,44 @@ CountOneFile.PrintCounts(counts);
 //     Console.WriteLine($"{count.Line} {count.Word} {count.Character} {count.File}");
 // }
 
-// var f = new OneFile();
-// var count = f.File_ReadLines();
-// Console.WriteLine($"{count.Line} {count.Word} {count.Character} {count.File}");
-
 public record struct Counts(int Line, int Word, int Bytes, string File);
 
 [MemoryDiagnoser]
 public class CountOneFile
 { 
     private static readonly int Size = 16 * 1024;
-    public static readonly string FilePath = "/home/rich/git/convenience/wordcount/text2.txt";//"/home/rich/git/convenience/Clarissa_Harlowe/clarissa_volume1.txt";
+    public static readonly string FilePath = "clarissa_volume1.txt";
+
+    [Benchmark]
+    public Counts File_ReadAllLines() => Count_File_ReadAllLines(FilePath);
+
+    public static Counts Count_File_ReadAllLines(string path)
+    {
+        int wordCount = 0;
+        int lineCount = 0;
+        int charCount = 0;
+
+        foreach (var line in File.ReadAllLines(path))
+        {
+            lineCount++;
+            charCount += line.Length;
+            bool wasSpace = true;
+
+            foreach (var c in line)
+            {
+                bool isSpace = Char.IsWhiteSpace(c);
+
+                if (!isSpace && wasSpace)
+                {
+                    wordCount++;
+                }
+
+                wasSpace = isSpace;
+            }
+        }
+
+        return new(lineCount, wordCount, charCount, Path.GetFileName(path));
+    }
 
     [Benchmark]
     public Counts File_ReadLines() => Count_File_ReadLines(FilePath);
@@ -112,9 +142,10 @@ public class CountOneFile
     
     public static Counts Count_File_Open(string path)
     {
-        const byte NEWLINE = (byte)'\n';
+        const byte LINE_FEED = (byte)'\n';
+        const byte CARRIAGE_RETURN = (byte)'\r';
         const byte SPACE = (byte)' ';
-        ReadOnlySpan<byte> searchChars = stackalloc[] {SPACE, NEWLINE};
+        ReadOnlySpan<byte> searchChars = stackalloc[] {SPACE, LINE_FEED};
 
         int wordCount = 0;
         int lineCount = 0;
@@ -140,7 +171,12 @@ public class CountOneFile
                     text = text.Slice(1);
                     continue;
                 }
-                else if (text[0] is NEWLINE)
+                else if (text[0] is CARRIAGE_RETURN)
+                {
+                    text = text.Slice(1);
+                    continue;
+                }
+                else if (text[0] is LINE_FEED)
                 {
                     wasSpace = true;
                     text = text.Slice(1);
@@ -161,7 +197,7 @@ public class CountOneFile
                     wasSpace = true;
                     nextIndex = indexOf + 1;
 
-                    if (text[indexOf] is NEWLINE)
+                    if (text[indexOf] is LINE_FEED)
                     {
                         lineCount++;       
                     }
@@ -191,6 +227,7 @@ public class CountOneFile
     public static Counts Count_File_OpenHandle(string path)
     {
         const byte NEWLINE = (byte)'\n';
+        const byte CARRIAGE_RETURN = (byte)'\r';
         const byte SPACE = (byte)' ';
         ReadOnlySpan<byte> searchChars = stackalloc[] {SPACE, NEWLINE};
 
@@ -200,7 +237,7 @@ public class CountOneFile
         int read = 0;
         bool wasSpace = true;
 
-        using var handle = File.OpenHandle(path);
+        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Size);
         Span<byte> buffer = rentedArray;
         ReadOnlySpan<byte> text = buffer;
@@ -218,17 +255,17 @@ public class CountOneFile
                     text = text.Slice(1);
                     continue;
                 }
+                else if (text[0] is CARRIAGE_RETURN)
+                {
+                    text = text.Slice(1);
+                    continue;
+                }
                 else if (text[0] is NEWLINE)
                 {
                     wasSpace = true;
                     text = text.Slice(1);
                     lineCount++;
-                    Console.WriteLine($"NL: {text[0]}");
                     continue;
-                }
-                else if (Char.IsWhiteSpace((char)text[0]))
-                {
-                    //Console.WriteLine($"Rando: {text[0]}");
                 }
                 else if (wasSpace)
                 {
@@ -281,7 +318,13 @@ public class CountOneFile
         }
     }
 
-    public static Counts File_Open2(string path)
+    [Benchmark]
+    public Counts File_Open2()
+    {
+        return Count_File_Open2(FilePath);
+    }
+
+    public static Counts Count_File_Open2(string path)
     {
         byte[] buffer = ArrayPool<byte>.Shared.Rent(Size);
         int wordCount = 0, lineCount = 0, byteCount = 0;
