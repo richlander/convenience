@@ -12,7 +12,7 @@ using Microsoft.CodeAnalysis.Text;
 BenchmarkRunner.Run(typeof(CountOneFile));
 // BenchmarkRunner.Run(typeof(CountMultiFile));
 
-// string path = args[0] ?? CountMultiFile.DirectoryPath;
+// string path = args.Length is 0 ? CountMultiFile.DirectoryPath : args[0];
 // var counts = CountMultiFile.Count_File_OpenHandle(path);
 // CountMultiFile.PrintCounts(counts);
 
@@ -40,7 +40,7 @@ public record struct Counts(int Line, int Word, int Bytes, string File);
 public class CountOneFile
 { 
     private static readonly int Size = 16 * 1024;
-    public static readonly string FilePath = "clarissa_volume1.txt";
+    public static readonly string FilePath = "Clarissa_Harlowe/clarissa_volume1.txt";
 
     [Benchmark]
     public Counts File_ReadAllLines() => Count_File_ReadAllLines(FilePath);
@@ -322,7 +322,7 @@ public class CountOneFile
 [MemoryDiagnoser]
 public class CountMultiFile
 {
-    public static readonly string DirectoryPath = "/home/rich/git/convenience/Clarissa_Harlowe/";
+    public static readonly string DirectoryPath = "./Clarissa_Harlowe/";
 
     [Benchmark]
     public List<Counts> File_ReadLines() => Count_File_ReadLines(CountMultiFile.DirectoryPath);
@@ -331,7 +331,7 @@ public class CountMultiFile
     {
         if (!Directory.Exists(path))
         {
-            throw new Exception();
+            throw new Exception($"Path doesn't exist: {path}; Current directory: {Directory.GetCurrentDirectory()}");
         }
 
         List<Counts> results = new();
@@ -352,7 +352,7 @@ public class CountMultiFile
     {
         if (!Directory.Exists(path))
         {
-            throw new Exception();
+            throw new Exception($"Path doesn't exist: {path}; Current directory: {Directory.GetCurrentDirectory()}");
         }
 
         List<Counts> results = new();

@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="benchmarkdotnet" Version="0.13.5" />
-    <None Include="../Clarissa_Harlowe/*.txt">
+    <None Include="../Clarissa_Harlowe/*.txt" LinkBase="Clarissa_Harlowe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
