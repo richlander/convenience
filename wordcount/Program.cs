@@ -9,8 +9,8 @@ using Microsoft.CodeAnalysis.Text;
 #pragma warning disable CA1050
 #pragma warning disable CA1822
 
-// BenchmarkRunner.Run(typeof(CountOneFile));
-BenchmarkRunner.Run(typeof(CountMultiFile));
+BenchmarkRunner.Run(typeof(CountOneFile));
+// BenchmarkRunner.Run(typeof(CountMultiFile));
 
 // string path = args.Length is 0 ? CountMultiFile.DirectoryPath : args[0];
 // var counts = CountMultiFile.Count_File_OpenHandle(path);
