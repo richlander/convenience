@@ -9,34 +9,35 @@ using Microsoft.CodeAnalysis.Text;
 #pragma warning disable CA1050
 #pragma warning disable CA1822
 
-BenchmarkRunner.Run(typeof(CountOneFile));
-// BenchmarkRunner.Run(typeof(CountMultiFile));
+// BenchmarkRunner.Run(typeof(CountOneFile));
+BenchmarkRunner.Run(typeof(CountMultiFile));
 
 // string path = args.Length is 0 ? CountMultiFile.DirectoryPath : args[0];
 // var counts = CountMultiFile.Count_File_OpenHandle(path);
 // CountMultiFile.PrintCounts(counts);
 
-// string path = args[0] ?? CountOneFile.FilePath;
+// string path = args.Length > 0 ? args[0] : CountOneFile.FilePath;
 // var counts = CountOneFile.Count_File_OpenHandle(path);
 // CountOneFile.PrintCounts(counts);
 
-// var f = new CountOneFile();
-// var counts = new Counts[]
+// var countGroup = new Counts[]
 // {
-//     f.File_ReadLines(),
-//     f.File_OpenText(),
-//     f.File_Open(),
-//     f.File_OpenHandle(),
+//     CountOneFile.Count_File_ReadAllLines(path),
+//     CountOneFile.Count_File_ReadLines(path),
+//     CountOneFile.Count_File_OpenText(path),
+//     CountOneFile.Count_File_Open(path),
+//     CountOneFile.Count_File_OpenHandle(path),
 // };
 
-// foreach (var count in counts)
+// foreach (var count in countGroup)
 // {
-//     Console.WriteLine($"{count.Line} {count.Word} {count.Character} {count.File}");
+//     Console.WriteLine($"{count.Line} {count.Word} {count.Bytes} {count.File}");
 // }
 
 public record struct Counts(int Line, int Word, int Bytes, string File);
 
 [MemoryDiagnoser]
+[HideColumns("Error", "StdDev", "Median", "RatioSD")]
 public class CountOneFile
 { 
     private static readonly int Size = 16 * 1024;
@@ -320,6 +321,7 @@ public class CountOneFile
 }
 
 [MemoryDiagnoser]
+[HideColumns("Error", "StdDev", "Median", "RatioSD")]
 public class CountMultiFile
 {
     public static readonly string DirectoryPath = "./Clarissa_Harlowe/";
@@ -345,7 +347,7 @@ public class CountMultiFile
         return results;
     }
 
-    [Benchmark]
+    [Benchmark(Baseline = true)]
     public List<Counts> File_OpenHandle() => Count_File_OpenHandle(CountMultiFile.DirectoryPath);
 
     public static List<Counts> Count_File_OpenHandle(string path)
