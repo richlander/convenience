@@ -1,7 +1,11 @@
 using System.Buffers;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Http.Json;
+using System.Runtime.CompilerServices;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -20,16 +24,15 @@ public static class JsonWithUtf8
         Utf8JsonWriter writer = new(memoryStream);
         HttpClient httpClient = new();
         string gist = "https://gist.githubusercontent.com/richlander/37f936a4e65d2176236c299885b84ab4/raw/7dead81c585da60504a4abd5a264db99544fd5ed/release-index.json";
-        var message = await httpClient.GetAsync(gist, HttpCompletionOption.ResponseContentRead);
-        var releases = message.Content.ReadAsStream();
+        using var message = await httpClient.GetAsync(gist, HttpCompletionOption.ResponseContentRead);
+        using var releases = message.Content.ReadAsStream();
 
         WriteHeadMatter(writer);
 
         foreach (var url in GetUrls(releases))
         {
-            // Console.WriteLine(url);
-            var releaseMessage = await httpClient.GetAsync(url, HttpCompletionOption.ResponseContentRead);
-            var release = releaseMessage.Content.ReadAsStream();
+            using var releaseMessage = await httpClient.GetAsync(url, HttpCompletionOption.ResponseContentRead);
+            using var release = releaseMessage.Content.ReadAsStream();
             GetReportForVersion(release, writer);
         }
 
@@ -41,8 +44,6 @@ public static class JsonWithUtf8
         StreamReader reader = new(memoryStream);
         Console.WriteLine(reader.ReadToEnd());
     }
-
-    private static void 
 
     public static void WriteHeadMatter(Utf8JsonWriter writer)
     {
@@ -57,8 +58,6 @@ public static class JsonWithUtf8
     {
         var channel = "channel-version"u8;
         var support = "support-phase"u8;
-        var maintenance = "maintenance"u8;
-        var active = "active"u8;
         var eol = "eol-date"u8;
         var supportEnds = "support-ends-in-days"u8;
         var releases = "releases"u8;
@@ -68,48 +67,36 @@ public static class JsonWithUtf8
         int read = stream.Read(buffer);
         ReadOnlySpan<byte> text = buffer.Slice(0, read);
         var reader = new Utf8JsonReader(text, isFinalBlock: false, state: default);
+        var j = new Json(stream, ref reader, writer, buffer, text);
 
         writer.WriteStartObject();
 
-        while (reader.BytesConsumed < text.Length && reader.Read())
+        while (j.Reader.Read())
         {
-            if (IsMatchProperty(reader, channel) || IsMatchProperty(reader, support))
-            {                                                                                                                                               
-                writer.WritePropertyName(reader.ValueSpan);
-                if (reader.Read())
-                {
-                    writer.WriteStringValue(reader.ValueSpan);
-                } 
+            if (j.IsProperty() && (j.IsValue(channel) || j.IsValue(support)))
+            {            
+                j.WriteProperty();                                                                                                                                   
             }
-            else if (IsMatchProperty(reader, eol))
+            else if (j.IsPropertyValue(eol))
             {
-                writer.WritePropertyName(reader.ValueSpan);
-                if (reader.Read())
-                {
-                    writer.WriteStringValue(reader.ValueSpan);
-
-                    string? dateString;
-                    if ((dateString = reader.GetString()) is not null)
-                    {
-                        var date = DateTime.Parse(dateString, CultureInfo.InvariantCulture);
-                        var diff = date - DateTime.Now;
-                        writer.WriteNumber(supportEnds, diff.Days);
-                    }
-                }
-                else
-                {
-                    writer.WriteNullValue();
-                }
+                j.WriteProperty();
+                int days = GetDaysAgo(ref j) * -1;
+                writer.WriteNumber(supportEnds, days);
             }
-            else if (IsMatchProperty(reader, releases))
+            else if (j.IsPropertyValue(releases))
             {
-                if (reader.Read() && reader.TokenType == JsonTokenType.StartArray)
+                if (j.Reader.Read() && j.Reader.TokenType == JsonTokenType.StartArray)
                 {
                     writer.WritePropertyName(releases);
                     writer.WriteStartArray();
-                    ReadReleaseObject(ref reader, writer);
+                    AddReleases(ref j);
                     writer.WriteEndArray();
                 }
+            }
+
+            if (j.Reader.IsFinalBlock && j.Reader.CurrentDepth is 0)
+            {
+                break;
             }
 
         }
@@ -118,83 +105,155 @@ public static class JsonWithUtf8
         ArrayPool<byte>.Shared.Return(rentedArray);
     }
 
-    private static void ReadReleaseObject(ref Utf8JsonReader reader, Utf8JsonWriter writer)
+    private static void AddReleases(ref Json j)
+    {
+        AddRelease(ref j, out bool isSecurity);
+
+        if (isSecurity)
+        {
+            return;
+        }
+
+        while (true)
+        {
+            if (j.Reader.BytesConsumed > 4096 * .8)
+            {
+                j.UpdateReader();
+            }
+
+            var oldReader = j.Reader;
+
+            if(IsReleaseSecurity(ref j, out JsonTokenType lastToken))
+            {                
+                j.Reader = oldReader;
+                AddRelease(ref j, out _);
+                return;
+            }
+            else if (lastToken is JsonTokenType.EndArray)
+            {
+                return;
+            }
+        }
+    }
+
+    private static bool IsReleaseSecurity(ref Json j, out JsonTokenType lastToken)
+    {
+        var security = "security"u8;
+        int depth = j.Reader.CurrentDepth + 1;
+        lastToken = JsonTokenType.None;
+        bool inSecurity = false;
+        bool pastSecurity = false;
+
+        while(j.Reader.Read())
+        {
+            if (j.Reader.CurrentDepth <= depth)
+            {
+                lastToken = j.Reader.TokenType;
+                
+                if (lastToken is JsonTokenType.StartObject)
+                {
+                    depth = j.Reader.CurrentDepth;
+                    continue;
+                }
+
+                return false;
+            }
+            else if (pastSecurity)
+            {
+                continue;
+            }
+            else if (j.IsPropertyValue(security))
+            {
+                inSecurity = true;
+            }
+            else if (inSecurity)
+            {
+                if (j.Reader.GetBoolean())
+                {
+                    return true;
+                }
+
+                inSecurity = false;
+                pastSecurity = true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void AddRelease(ref Json j, out bool isSecurity)
     {
         var releaseDate = "release-date"u8;
         var releaseVersion = "release-version"u8;
         var security = "security"u8;
         var cveList = "cve-list"u8;
-        var trueValue = "true"u8;
-        bool inCveList = false;
-        bool isSecurity = false;
-        int depth = reader.CurrentDepth + 1;
-        int skipDepth = depth + 1;
-        int count = 0;
+        var daysAgo = "released-days-ago"u8;
+        isSecurity = false;
+
+        Utf8JsonWriter writer = j.Writer;
+        int depth = j.Reader.CurrentDepth + 1;
+        bool skip = false;
         
-        while (reader.Read())
+        writer.WriteStartObject();
+
+        while (j.Reader.Read() || j.UpdateReader())
         {
-            if (reader.CurrentDepth > skipDepth)
+
+            if (j.Reader.CurrentDepth <= depth)
             {
-                continue;
-            }
-            
-            if (reader.TokenType == JsonTokenType.StartObject)
-            {
-                if (reader.CurrentDepth == depth)
+                if (j.Reader.TokenType is JsonTokenType.StartObject)
                 {
-                    writer.WriteStartObject();
+                    depth = j.Reader.CurrentDepth;
+                    continue;
                 }
-            }
-            else if (reader.TokenType == JsonTokenType.EndObject)
-            {
-                if (reader.CurrentDepth == depth)
-                {
-                    writer.WriteEndObject();
-                }
-            }
-            else if (reader.CurrentDepth <= depth && reader.TokenType == JsonTokenType.EndArray)
-            {
+
                 break;
             }
-            else if (reader.TokenType != JsonTokenType.PropertyName)
+            else if (skip)
             {
                 continue;
             }
-            else if (IsProperty(reader)  && 
-                (IsMatchName(reader, releaseDate) || IsMatchName(reader, releaseVersion)) )
+            else if (j.IsValue(releaseDate))
             {
-                writer.WritePropertyName(reader.ValueSpan);
-                Console.Write(Encoding.UTF8.GetString(reader.ValueSpan));
-                Console.Write(": ");
-                reader.Read();
-                writer.WriteStringValue(reader.ValueSpan);
-                Console.WriteLine(Encoding.UTF8.GetString(reader.ValueSpan));
+                j.WriteProperty();
+                int days = GetDaysAgo(ref j);
+                writer.WriteNumber(daysAgo, days);                
             }
-            else if (IsMatchProperty(reader, cveList))
+            else if (j.IsValue(releaseVersion))
             {
-                writer.WritePropertyName(reader.ValueSpan);
-                ProcessCveList(ref reader, writer);
-                count++;
+                j.WriteProperty();
             }
-            else if (IsMatchProperty(reader, security))
+            else if (j.IsValue(security))
             {
-                writer.WritePropertyName(reader.ValueSpan);
-                reader.Read();
-                var truth = reader.GetBoolean();
-                writer.WriteBooleanValue(truth);
-                isSecurity = truth;
+                j.ReadUpdate();   
+
+                isSecurity = j.Reader.GetBoolean();
+                writer.WritePropertyName(security);
+                writer.WriteBooleanValue(isSecurity);
+                skip = true;
+
+                if (j.ReadUpdate() && j.IsValue(cveList))
+                {
+                    ProcessCveList(ref j);
+                }
             }
         }
+
+        writer.WriteEndObject();
     }
 
-    private static void ProcessCveList(ref Utf8JsonReader reader, Utf8JsonWriter writer)
+    private static void ProcessCveList(ref Json j)
     {
+        var cveList = "cve-list"u8;
         bool inList = true;
-        while(inList && reader.Read())
+        Utf8JsonWriter writer = j.Writer;
+
+        while(inList && j.Reader.Read())
         {
-            switch (reader.TokenType)
+            switch (j.Reader.TokenType)
             {
                 case JsonTokenType.StartArray:
+                    writer.WritePropertyName(cveList);
                     writer.WriteStartArray();
                     break;
                 case JsonTokenType.EndArray:
@@ -208,10 +267,11 @@ public static class JsonWithUtf8
                     writer.WriteEndObject();
                     break;
                 case JsonTokenType.PropertyName:
-                    writer.WritePropertyName(reader.ValueSpan);
+                    j.WriteProperty();
                     break;
-                case JsonTokenType.String:
-                    writer.WriteStringValue(reader.ValueSpan);
+                case JsonTokenType.Null:
+                    writer.WriteNull(cveList);
+                    inList = false;
                     break;
                 default:
                     throw new Exception();
@@ -219,13 +279,6 @@ public static class JsonWithUtf8
         }
     }
 
-    private static bool IsMatchProperty(Utf8JsonReader reader, ReadOnlySpan<byte> name) => 
-       IsProperty(reader) && IsMatchName(reader, name);
-
-    private static bool IsMatchName(Utf8JsonReader reader, ReadOnlySpan<byte> name) => 
-        reader.ValueSpan.SequenceCompareTo(name) is 0;
-
-    private static bool IsProperty(Utf8JsonReader reader) => reader.TokenType is JsonTokenType.PropertyName;
     public static List<string> GetUrls(Stream stream)
     {
         ReadOnlySpan<byte> releaseJson = "releases.json"u8;
@@ -235,15 +288,15 @@ public static class JsonWithUtf8
         int read = stream.Read(buffer);
         ReadOnlySpan<byte> text = buffer.Slice(0, read);
         var reader = new Utf8JsonReader(buffer, isFinalBlock: false, state: default);
-        var json = new Json(stream, ref reader, null, buffer, text);
+        var j = new Json(stream, ref reader, null, buffer, text);
 
-        while (json.Read())
+        while (j.Reader.Read())
         {
-            if (reader.TokenType is JsonTokenType.PropertyName && reader.ValueSpan.SequenceCompareTo(releaseJson) is 0)
+            if (j.IsPropertyValue(releaseJson))
             {
-                if (json.Read())
+                if (j.Reader.Read())
                 {
-                    var val = reader.GetString() ?? "blah";
+                    var val = j.Reader.GetString() ?? throw new Exception();
                     urls.Add(val);
                 }
             }
@@ -252,13 +305,16 @@ public static class JsonWithUtf8
         ArrayPool<byte>.Shared.Return(rentedArray);
         return urls;
     }
-    private static void UpdateReader(Stream stream, ref ReadOnlySpan<byte> text, ref Span<byte> buffer, ref Utf8JsonReader reader)
+
+    private static int GetDaysAgo(ref Json j)
     {
-        text = text.Slice((int)reader.BytesConsumed);
-        int leftoverLength = text.Length;
-        text.CopyTo(buffer);
-        int read = stream.Read(buffer.Slice(leftoverLength));
-        text = buffer.Slice(0, read + leftoverLength);
-        reader = new Utf8JsonReader(buffer, isFinalBlock: read is 0, reader.CurrentState);
+        string? dateString;
+        if ((dateString = j.Reader.GetString()) is not null)
+        {
+            var date = DateTime.Parse(dateString, CultureInfo.InvariantCulture);
+            return (DateTime.Now - date).Days;
+        }
+
+        return 0;
     }
 }
