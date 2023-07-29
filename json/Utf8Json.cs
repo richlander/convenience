@@ -198,7 +198,6 @@ public static class JsonWithUtf8
 
         while (j.Reader.Read() || j.UpdateReader())
         {
-
             if (j.Reader.CurrentDepth <= depth)
             {
                 if (j.Reader.TokenType is JsonTokenType.StartObject)
