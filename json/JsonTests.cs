@@ -10,6 +10,9 @@ namespace Tests;
 public class JsonTests
 {
     [Benchmark]
+    public Task<string> DownloadFileBenchmarks() => DownloadFileBenchmark.DownloadFileBenchmark.Run();
+
+    [Benchmark]
     public Task<string> WithJsonSerializer() => JsonSerializerBenchmark.JsonSerializerBenchmark.Run();
 
     [Benchmark]
