@@ -1,6 +1,5 @@
 
 using BenchmarkDotNet.Attributes;
-using ReleaseJson;
 
 namespace Tests;
 
@@ -11,11 +10,16 @@ namespace Tests;
 public class JsonTests
 {
     [Benchmark]
-    public Task<string> FromJson() => GetFromJson.Go();
-
+    public Task<string> WithJsonSerializer() => JsonSerializerBenchmark.JsonSerializerBenchmark.Run();
 
     [Benchmark]
-    public Task<string> WithSourceGeneration() => JsonWithSourceGeneration.Go();
+    public Task<string> WithJsonSerializerSourceGenerator() => JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run();
+
+    [Benchmark]
+    public Task<string> WithJsonDocument() => JsonDocumentBenchmark.JsonDocumentBenchmark.Run();
+
+    [Benchmark]
+    public Task<string> WithUtf8JsonReaderWriter() => Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run();
 
     // [Benchmark]
     // public Task<byte[]> WithUtf8() => JsonWithUtf8.Go();

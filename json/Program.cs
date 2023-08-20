@@ -4,15 +4,20 @@ using BenchmarkDotNet.Running;
 using ReleaseJson;
 using Tests;
 
-// BenchmarkRunner.Run(typeof(JsonTests));
+BenchmarkRunner.Run(typeof(JsonTests));
 
-await JsonWithUtf8.Go();
-// Console.WriteLine(Encoding.UTF8.GetChars(json));
+// List<BenchmarkResult> results =
+// [
+//     new (nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), JsonSerializerBenchmark.JsonSerializerBenchmark.Run()),
+//     new (nameof(JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark), JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run()),
+//     new (nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), JsonDocumentBenchmark.JsonDocumentBenchmark.Run()),
+//     new (nameof(Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark), Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run())
+// ];
 
+// foreach (var result in results)
+// {
+//     Console.WriteLine($"*********{result.Name}");
+//     Console.WriteLine(await result.Result);
+// }
 
-
-
-
-// (int)((DateTime.Now.Ticks - day.Ticks) / TimeSpan.TicksPerDay)
-
-// DateTime.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulure)
+// public record BenchmarkResult(string Name, Task<string> Result);
