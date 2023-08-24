@@ -1,10 +1,11 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using BenchmarkDotNet.Attributes;
 
 namespace JsonSerializerBenchmark;
-public static class JsonSerializerBenchmark
+public class JsonSerializerBenchmark
 {
-    public static async Task<string> Run()
+    public static async Task<string> Run2()
     {
         var message = "JSON data is wrong";
         HttpClient httpClient= new();
@@ -15,6 +16,34 @@ public static class JsonSerializerBenchmark
         List<ReportJson.Version> versions= [version];
         ReportJson.ReleaseReport report = new(DateTime.Today.ToShortDateString(), versions);
         return JsonSerializer.Serialize(report, options);
+    }
+
+    public static string Run(Stream stream)
+    {
+        stream.Position = 0;
+        var json = GetReportForStream(stream);
+        return json;
+    }
+
+    public static async Task<string> Test()
+    {
+        HttpClient httpClient= new();
+        using var releaseMessage = await httpClient.GetAsync(FakeTestData.URL, HttpCompletionOption.ResponseContentRead);
+        var stream = await releaseMessage.Content.ReadAsStreamAsync() ?? throw new Exception("bad read");
+        var json = GetReportForStream(stream);
+        return json;
+    }
+
+    public static string GetReportForStream(Stream stream)
+    {
+        var message = "JSON data is wrong";
+        var release = JsonSerializer.Deserialize<ReleaseJson.Release>(stream) ?? throw new Exception(message);
+        var version = GetVersionForRelease(release);
+
+        // var options = new JsonSerializerOptions(JsonSerializerOptions.Default);
+        List<ReportJson.Version> versions= [version];
+        ReportJson.ReleaseReport report = new(DateTime.Today.ToShortDateString(), versions);
+        return JsonSerializer.Serialize(report);
     }
 
     public static ReportJson.Version GetVersionForRelease(ReleaseJson.Release release)

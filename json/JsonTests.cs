@@ -9,18 +9,28 @@ namespace Tests;
 [MemoryDiagnoser]
 public class JsonTests
 {
+    // private const int EXPECTEDLENGTH = 465;
     // [Benchmark]
     // public Task<string> DownloadFileBenchmarks() => DownloadFileBenchmark.DownloadFileBenchmark.Run();
+    private Stream? _stream = null;
+
+    [GlobalSetup]
+    public async Task Setup()
+    {
+        HttpClient httpClient= new();
+        var releaseMessage = await httpClient.GetAsync(FakeTestData.URL, HttpCompletionOption.ResponseContentRead);
+        _stream = await releaseMessage.Content.ReadAsStreamAsync();
+    }
 
     [Benchmark]
-    public Task<string> WithJsonSerializer() => JsonSerializerBenchmark.JsonSerializerBenchmark.Run();
+    public void WithJsonSerializer() => JsonSerializerBenchmark.JsonSerializerBenchmark.Run(_stream!);
 
     [Benchmark]
-    public Task<string> WithJsonSerializerSourceGenerator() => JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run();
+    public void WithJsonSerializerSourceGenerator() => JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run(_stream!);
 
     [Benchmark]
-    public Task<string> WithJsonDocument() => JsonDocumentBenchmark.JsonDocumentBenchmark.Run();
+    public void WithJsonDocument() => JsonDocumentBenchmark.JsonDocumentBenchmark.Run(_stream!);
 
-    [Benchmark]
-    public Task<string> WithUtf8JsonReaderWriter() => Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run();
+    // [Benchmark]
+    // public async Task WithUtf8JsonReaderWriter() => await Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run(_stream!);
 }

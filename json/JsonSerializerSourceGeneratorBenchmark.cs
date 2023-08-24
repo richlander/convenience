@@ -5,11 +5,17 @@ using System.Text.Json.Serialization;
 namespace JsonSerializerSourceGeneratorBenchmark;
 public static class JsonSerializerSourceGeneratorBenchmark
 {
-    public static async Task<string> Run()
+    public static string Run(Stream stream)
+    {
+        stream.Position = 0;
+        var json = GetReportForStream(stream);
+        return json;
+    }
+
+    public static string GetReportForStream(Stream stream)
     {
         var message = "JSON data is wrong";
-        HttpClient httpClient= new();
-        var release = await httpClient.GetFromJsonAsync<ReleaseJson.Release>(FakeTestData.URL, ReleaseContext.Default.Release) ?? throw new Exception(message);
+        var release = JsonSerializer.Deserialize<ReleaseJson.Release>(stream, ReleaseContext.Default.Release) ?? throw new Exception(message);
         var version = GetVersionForRelease(release);
 
         List<ReportJson.Version> versions= [version];

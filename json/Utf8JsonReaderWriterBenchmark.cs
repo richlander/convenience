@@ -11,8 +11,9 @@ public static class Utf8JsonReaderWriterBenchmark
     {
         var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(FakeTestData.URL, HttpCompletionOption.ResponseHeadersRead);
-        var jsonStream = await releaseMessage.Content.ReadAsStreamAsync();
-        var releases = await ReleasesJsonReader.FromStream(jsonStream);
+        var stream = await releaseMessage.Content.ReadAsStreamAsync();
+        // stream.Position = 0;
+        var releases = await ReleasesJsonReader.FromStream(stream);
         var memory = new MemoryStream();
         var writer = new ReleaseJsonWriter(releases, memory);
         await writer.Write();

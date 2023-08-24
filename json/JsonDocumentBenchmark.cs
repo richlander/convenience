@@ -4,15 +4,18 @@ using System.Text.Json.Nodes;
 namespace JsonDocumentBenchmark;
 public static class JsonDocumentBenchmark
 {
-    public static async Task<string> Run()
+
+    public static string Run(Stream stream)
     {
-        var message = "JSON content missing";
-        var httpClient = new HttpClient();
-        using var releaseMessage = await httpClient.GetAsync(FakeTestData.URL, HttpCompletionOption.ResponseHeadersRead);
-        var stream = await releaseMessage.Content.ReadAsStreamAsync();
+        stream.Position = 0;
+        var json = GetReportForStream(stream);
+        return json;
+    }
 
+    public static string GetReportForStream(Stream stream)
+    {
+        var message = "JSON data is wrong";
         var doc = JsonNode.Parse(stream) ?? throw new Exception(message);
-
         var version = doc["channel-version"]?.ToString() ?? throw new Exception(message);
         var supportPhase = doc["support-phase"]?.ToString() ?? throw new Exception(message);
         var eolDate = doc["eol-date"]?.ToString();
