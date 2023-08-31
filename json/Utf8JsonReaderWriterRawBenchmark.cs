@@ -379,7 +379,7 @@ public class JsonPipeReader(Pipe pipe, ReadResult result)
 
         return found;
     }
-    
+
     public bool ReadToProperty(ReadOnlySpan<byte> name, bool updateState = true)
     {
         var reader = GetJsonReader();
@@ -393,6 +393,9 @@ public class JsonPipeReader(Pipe pipe, ReadResult result)
         return found;
     }
 
+    // This app only relies on T == bool
+    // A different app may rely on multiple types of T
+    // This more complicated version was written to demonstrate the pattern
     public bool ReadToPropertyValue<T>(ReadOnlySpan<byte> name, [NotNullWhen(true)] out T? value, bool updateState = true)
     {
         var reader = GetJsonReader();
@@ -405,6 +408,7 @@ public class JsonPipeReader(Pipe pipe, ReadResult result)
 
             if (type == typeof(bool))
             {
+                // Unsafe.As<>() can be used for the same purpose
                 value = (T)(object)reader.GetBoolean();
             }
             else if (type == typeof(string))

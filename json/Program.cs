@@ -20,10 +20,21 @@ if (args is {Length: >0} && args[0] is {Length: > 0})
 
 if (index is -1)
 {
+    Console.WriteLine("First pass");
+
     foreach (var benchmark in benchmarks)
     {
         await RunMiniBenchmark(benchmark);
     }
+
+    Console.WriteLine("Second pass");
+
+    foreach (var benchmark in benchmarks)
+    {
+        await RunMiniBenchmark(benchmark);
+    }
+
+    Console.WriteLine("Third pass");
 
     foreach (var benchmark in benchmarks)
     {
