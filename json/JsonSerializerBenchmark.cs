@@ -1,71 +1,54 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using BenchmarkDotNet.Attributes;
+using ReportJson;
+using ReleaseJson;
+using Version = ReportJson.Version;
 
 namespace JsonSerializerBenchmark;
 public class JsonSerializerBenchmark
 {
-    public static async Task<string> Run2()
+    public static async Task Run()
     {
-        var message = "JSON data is wrong";
-        HttpClient httpClient= new();
-        var release = await httpClient.GetFromJsonAsync<ReleaseJson.Release>(FakeTestData.URL) ?? throw new Exception(message);
-        var version = GetVersionForRelease(release);
-
-        var options = new JsonSerializerOptions(JsonSerializerOptions.Default);
-        List<ReportJson.Version> versions= [version];
-        ReportJson.ReleaseReport report = new(DateTime.Today.ToShortDateString(), versions);
-        return JsonSerializer.Serialize(report, options);
+        var json = await MakeReport();
+        Console.WriteLine(json);
+        Console.WriteLine();
+        Console.WriteLine($"Length: {json.Length}");
     }
 
-    public static string Run(Stream stream)
-    {
-        stream.Position = 0;
-        var json = GetReportForStream(stream);
-        return json;
-    }
-
-    public static async Task<string> Test()
+    public static async Task<string> MakeReport()
     {
         HttpClient httpClient= new();
-        using var releaseMessage = await httpClient.GetAsync(FakeTestData.URL, HttpCompletionOption.ResponseContentRead);
-        var stream = await releaseMessage.Content.ReadAsStreamAsync() ?? throw new Exception("bad read");
-        var json = GetReportForStream(stream);
-        return json;
-    }
-
-    public static string GetReportForStream(Stream stream)
-    {
-        var message = "JSON data is wrong";
-        var release = JsonSerializer.Deserialize<ReleaseJson.Release>(stream) ?? throw new Exception(message);
-        var version = GetVersionForRelease(release);
-
-        // var options = new JsonSerializerOptions(JsonSerializerOptions.Default);
-        List<ReportJson.Version> versions= [version];
-        ReportJson.ReleaseReport report = new(DateTime.Today.ToShortDateString(), versions);
-        return JsonSerializer.Serialize(report);
-    }
-
-    public static ReportJson.Version GetVersionForRelease(ReleaseJson.Release release)
-    {
-        List<ReportJson.Release> releases = [];
+        var release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.URL) ?? throw new Exception(JsonBenchmark.BADJSON);
         int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        ReportJson.Version version = new(release.ChannelVersion, release.SupportPhase is "active" or "maintainence", release.EolDate ?? "Unknown", supportDays, releases);
+        Version version = new(release.ChannelVersion, release.SupportPhase is "active" or "maintainence", release.EolDate ?? "Unknown", supportDays, []);
+
+        foreach(var reportRelease in GetReleasesForReport(release))
+        {
+            version.Releases.Add(reportRelease);
+        }
+        
+        Report report = new(DateTime.Today.ToShortDateString(), [version]);
+        var json = JsonSerializer.Serialize(report);
+        return json;
+    }
+
+    // Get first and first security release
+    public static IEnumerable<Release> GetReleasesForReport(MajorRelease release)
+    {
         bool securityOnly = false;
         
-        foreach (ReleaseJson.ReleaseDetail releaseDetail in release.Releases)
+        foreach (ReleaseDetail releaseDetail in release.Releases)
         {
             if (!releaseDetail.Security && securityOnly)
             {
                 continue;
             }
             
-            var reportRelease = new ReportJson.Release(releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.Cves);
-            releases.Add(reportRelease);
+            yield return new Release(releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.Cves);
 
             if (releaseDetail.Security)
             {
-                break;
+                yield break;
             }
             else if (!securityOnly)
             {
@@ -73,13 +56,13 @@ public class JsonSerializerBenchmark
             }
         }
 
-        return version;
-
-        static int GetDaysAgo(string date, bool positiveNumber = false)
-        {
-            bool success = DateTime.TryParse(date, out var day);
-            var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
-            return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
-        }
-    }   
+        yield break;
+    }
+   
+    static int GetDaysAgo(string date, bool positiveNumber = false)
+    {
+        bool success = DateTime.TryParse(date, out var day);
+        var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
+        return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
+    }
 }

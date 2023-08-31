@@ -1,41 +1,85 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using NewtonsoftJsonSerializerBenchmark;
 
 namespace JsonDocumentBenchmark;
 public static class JsonDocumentBenchmark
 {
 
-    public static string Run(Stream stream)
+    public static async Task Run()
     {
-        stream.Position = 0;
+        var json = await MakeReport();
+        Console.WriteLine(json);
+        Console.WriteLine();
+        Console.WriteLine($"Length: {json.Length}");
+    }
+
+    public static async Task<string> MakeReport()
+    {
+        var httpClient = new HttpClient();
+        using var responseMessage = await httpClient.GetAsync(JsonBenchmark.URL, HttpCompletionOption.ResponseHeadersRead);
+        var stream = await responseMessage.Content.ReadAsStreamAsync();
         var json = GetReportForStream(stream);
         return json;
     }
 
     public static string GetReportForStream(Stream stream)
     {
-        var message = "JSON data is wrong";
-        var doc = JsonNode.Parse(stream) ?? throw new Exception(message);
-        var version = doc["channel-version"]?.ToString() ?? throw new Exception(message);
-        var supportPhase = doc["support-phase"]?.ToString() ?? throw new Exception(message);
+        var doc = JsonNode.Parse(stream) ?? throw new Exception(JsonBenchmark.BADJSON);
+        var version = doc["channel-version"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
+        var supportPhase = doc["support-phase"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
         var eolDate = doc["eol-date"]?.ToString();
-        var releases = doc["releases"]?.AsArray() ?? throw new Exception(message);
+        var releases = doc["releases"]?.AsArray() ?? throw new Exception(JsonBenchmark.BADJSON);
         var supported = supportPhase is "active" or "maintenance";
         var reportReleaseArray = new JsonArray();
+
+        foreach(var releaseReport in GetReleasesForReport(releases))
+        {
+            reportReleaseArray.Add(releaseReport);
+        }
+
+        var reportVersion = new JsonObject()
+        {
+            ["version"] = version,
+            ["supported"] = supported,
+            ["eol-date"] = eolDate,
+            ["releases"] = reportReleaseArray
+        };
+
+        if (eolDate is not null)
+        {
+            reportVersion.Add("support-ends-in-days", GetDaysAgo(eolDate, true));
+        }
+
+        var report = new JsonObject()
+        {
+            ["report-date"] = DateTime.Now.ToShortDateString(),
+            ["versions"] = new JsonArray()
+            {
+                reportVersion
+            }
+        };
+
+        var options = new JsonSerializerOptions { WriteIndented = false };
+        return report.ToJsonString(options);
+    }
+
+    // Get first and first security release
+    static IEnumerable<JsonObject> GetReleasesForReport(JsonArray releases)
+    {
         var securityOnly = false;
 
         foreach (var releaseVal in releases)
         {
-            var release = releaseVal ?? throw new Exception(message);
-
-            var releaseDate = release["release-date"]?.ToString() ?? throw new Exception(message);
-            var releaseVersion = release["release-version"]?.ToString() ?? throw new Exception(message);
-            var securityNode = release["security"] ?? throw new Exception(message);
+            var release = releaseVal ?? throw new Exception(JsonBenchmark.BADJSON);
+            var releaseDate = release["release-date"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
+            var releaseVersion = release["release-version"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
+            var securityNode = release["security"] ?? throw new Exception(JsonBenchmark.BADJSON);
             var security = securityNode.GetValueKind() switch 
             {
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
-                _ => throw new Exception(message)
+                _ => throw new Exception(JsonBenchmark.BADJSON)
             };
 
             if (securityOnly && !security)
@@ -47,7 +91,7 @@ public static class JsonDocumentBenchmark
                 securityOnly = true;
             }
 
-            var cves = release["cve-list"] ?? throw new Exception(message);
+            var cves = release["cve-list"] ?? throw new Exception(JsonBenchmark.BADJSON);
 
             var reportRelease = new JsonObject()
             {
@@ -58,45 +102,22 @@ public static class JsonDocumentBenchmark
                 ["cve-list"] = cves.DeepClone()
             };
 
-            reportReleaseArray.Add(reportRelease);
+            yield return reportRelease;
 
             if (security)
             {
-                break;
+                yield break;
             }
         }
 
-        var reportVersion = new JsonObject()
-        {
-            ["version"] = version,
-            ["supported"] = supported,
-            ["eol-date"] = eolDate
-        };
+        yield break;
+    }
 
-        var report = new JsonObject()
-        {
-            ["report-date"] = DateTime.Now.ToShortDateString(),
-            ["versions"] = new JsonArray()
-            {
-                reportVersion
-            }
-        };
-
-        if (eolDate is not null)
-        {
-            reportVersion.Add("support-ends-in-days", GetDaysAgo(eolDate, true));
-        }
-
-        reportVersion.Add("releases", reportReleaseArray);
-        var options = new JsonSerializerOptions { WriteIndented = false };
-        return report.ToJsonString(options);
-
-        static int GetDaysAgo(string date, bool positiveNumber = false)
-        {
-            bool success = DateTime.TryParse(date, out var day);
-            var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
-            return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
-        }
+    static int GetDaysAgo(string date, bool positiveNumber = false)
+    {
+        bool success = DateTime.TryParse(date, out var day);
+        var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
+        return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
     }
 }
 

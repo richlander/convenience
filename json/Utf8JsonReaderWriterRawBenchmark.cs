@@ -1,11 +1,12 @@
 using System.Buffers;
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Text.Json;
 
 
-namespace Utf8JsonReaderWriterBenchmark;
-public static class Utf8JsonReaderWriterBenchmark
+namespace Utf8JsonReaderWriterRawBenchmark;
+public static class Utf8JsonReaderWriterRawBenchmark
 {
     public static async Task Run()
     {
@@ -25,23 +26,23 @@ public static class Utf8JsonReaderWriterBenchmark
         var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.URL, HttpCompletionOption.ResponseHeadersRead);
         var stream = await releaseMessage.Content.ReadAsStreamAsync();
-        var releases = await ReleasesJsonReader.FromStream(stream);
         var memory = new MemoryStream();
-        var writer = new ReleaseJsonWriter(releases, memory);
-        await writer.Write();
+        Utf8JsonWriter utf8JsonWriterwriter = new(memory);
+        var releases = await ReleasesJsonReaderReportWriter.FromStream(stream, utf8JsonWriterwriter);
+        await releases.Write();
         memory.Flush();
         memory.Position= 0;
         return memory;
     }
 }
 
-public class ReleaseJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
+public class ReleasesJsonReaderReportWriter(Pipe pipe, ReadResult result, Utf8JsonWriter writer) : JsonPipeReader(pipe, result)
 {
-    private readonly Utf8JsonWriter _writer = new(memory);
-    private readonly ReleasesJsonReader _releasesReader = releasesReader;
+    private readonly Utf8JsonWriter _writer = writer;
 
     public async Task Write()
     {
+        // write head matter
         _writer.WriteStartObject();
         _writer.WriteString("report-date"u8, DateTime.Now.ToShortDateString());
         _writer.WriteStartArray("versions"u8);
@@ -53,42 +54,66 @@ public class ReleaseJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
         // Given this content, it makes sense.
         // Advance() will be called once at most
         // For other scenarios, retain the readerstate across buffer reads
-        while (!_releasesReader.ReadToProperty("releases"u8, false))
+        while (!ReadToProperty("releases"u8, false))
         {
-            await _releasesReader.Advance();
+            await Advance();
         }
         
-        var version = _releasesReader.GetVersion();
-        WriteVersionObject(version);
+        // Write version object
+        _writer.WriteStartObject();
+        WriteVersion();
+
+        // Write release property
         _writer.WritePropertyName("releases"u8);
         _writer.WriteStartArray();
 
-        bool securityOnly = false;
+        // Write release objects
+        var securityOnly = false;
+        var isSecurity = false;
 
-        await foreach (var release in _releasesReader.GetReleases())
+        while (!isSecurity)
         {
-            if (!release.Security && securityOnly)
+            while (!ReadToPropertyValue<bool>("security"u8, out isSecurity, false))
             {
+                await Advance();
+            }
+
+            if (!isSecurity && securityOnly)
+            {
+                while (!ReadToTokenType(JsonTokenType.EndArray))
+                {
+                    await Advance();
+                }
+
+                // Read until end of release object
+                var depth = Depth -1;
+
+                while (!ReadToDepth(depth))
+                {
+                    await Advance();
+                }
+
                 continue;
             }
 
-            WriteReleaseObject(release);
+            _writer.WriteStartObject();
+            isSecurity = WriteRelease();
 
-            if (release.Security)
+            if (!isSecurity)
             {
-                while (!_releasesReader.ReadToTokenType(JsonTokenType.EndArray, false))
-                {
-                    await _releasesReader.Advance();
-                }
-
-                WriteCveList();
-                break;
-            }
-            else
-            {
-                WriteEmptyCveList();
+                WriteCveEmpty();
+                _writer.WriteEndObject();
                 securityOnly = true;
+                continue;
             }
+
+            while (!ReadToTokenType(JsonTokenType.EndArray, false))
+            {
+                await Advance();
+            }
+
+            WriteCveList();
+            _writer.WriteEndObject();
         }
 
         // End release
@@ -103,73 +128,9 @@ public class ReleaseJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
         _writer.Flush();
     }
 
-    public void WriteVersionObject(Version version)
-    {
-        _writer.WriteStartObject();
-        _writer.WritePropertyName("version"u8);
-        _writer.WriteStringValue(version.MajorVersion);
-        _writer.WritePropertyName("supported"u8);
-        _writer.WriteBooleanValue(version.Supported);
-        _writer.WritePropertyName("eol-date"u8);
-        _writer.WriteStringValue(version.EolDate);
-        _writer.WritePropertyName("support-ends-in-days"u8);
-        _writer.WriteNumberValue(version.SupportEndsInDays);
-    }
-
-    public void WriteReleaseObject(Release release)
-    {
-        _writer.WriteStartObject();
-        _writer.WritePropertyName( "release-version"u8);
-        _writer.WriteStringValue(release.BuildVersion);
-        _writer.WritePropertyName("security");
-        _writer.WriteBooleanValue(release.Security);
-        _writer.WritePropertyName("release-date"u8);
-        _writer.WriteStringValue(release.ReleaseDate);
-        _writer.WritePropertyName("released-days-ago");
-        _writer.WriteNumberValue(release.ReleasedDaysAgo);
-    }
-
-    public void WriteCveList()
-    {
-        _writer.WritePropertyName("cve-list"u8);
-        _writer.WriteStartArray();
-
-        foreach (var cve in _releasesReader.GetCves())
-        {
-            WriteCve(cve);
-        }
-
-        _writer.WriteEndArray();
-        _writer.WriteEndObject();
-    }
-
-    public void WriteEmptyCveList()
-    {
-        _writer.WritePropertyName("cve-list"u8);
-        _writer.WriteStartArray();
-        _writer.WriteEndArray();
-        _writer.WriteEndObject();
-    }
-
-    public void WriteCve(Cve cve)
-    {
-        _writer.WriteStartObject();
-        _writer.WritePropertyName("cve-id"u8);
-        _writer.WriteStringValue(cve.CveId);
-        _writer.WritePropertyName("cve-url"u8);
-        _writer.WriteStringValue(cve.CveUrl);
-        _writer.WriteEndObject();
-    }
-}
-
-public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(pipe, result)
-{        
-    public Version GetVersion()
+    public void WriteVersion()
     {
         var reader = GetJsonReader();
-        string? channel = null;
-        string? support = null;
-        string? eol = null;
 
         while (reader.Read())
         {
@@ -179,104 +140,46 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
             }
             else if (reader.ValueTextEquals("channel-version"u8))
             {
+                _writer.WritePropertyName("version"u8);
                 reader.Read();
-                channel = reader.GetString();
+                _writer.WriteStringValue(reader.GetValueSpan());
             }
             else if (reader.ValueTextEquals("support-phase"u8))
             {
+                var supported = false;
                 reader.Read();
-                support = reader.GetString();
+                
+                if (reader.ValueTextEquals("active"u8) ||
+                    reader.ValueTextEquals("maintainence"u8))
+                {
+                    supported = true;
+                }
+
+                _writer.WriteBoolean("supported"u8, supported);
             }
             else if (reader.ValueTextEquals("eol-date"u8))
             {
+                _writer.WritePropertyName(reader.GetValueSpan());
                 reader.Read();
-                eol = reader.GetString();
+                var eol = reader.GetString() ?? "";
+                _writer.WriteStringValue(eol);
+                int days = eol is "" ? 0 : GetDaysAgo(eol, true);
+                _writer.WriteNumber("support-ends-in-days"u8, days);
             }
             else if (reader.ValueTextEquals("releases"u8))
             {
                 reader.Read();
 
-                if (string.IsNullOrEmpty(channel) ||
-                string.IsNullOrEmpty(support))
-                {                }
-
-                int days = 0;
-                if (eol is null)
-                {
-                    eol = "";
-                }
-                else
-                {
-                    days = GetDaysAgo(eol, true);
-                }
-
-                bool supported = support is "active" or "maintenance";
-
-                if (channel is null)
-                {
-                    throw new Exception(JsonBenchmark.BADJSON);
-                }
-
                 UpdateState(reader);
-                return new Version(channel, supported, eol, days);
+                return;
             }
         }
 
-        throw new Exception(JsonBenchmark.BADJSONREAD);
     }
 
-    public async IAsyncEnumerable<Release> GetReleases()
+    public bool WriteRelease()
     {
-        int index = -1;
-        while (true)
-        {
-            index++;
-
-            if (index > 0)
-            {
-                while (!ReadToTokenType(JsonTokenType.EndArray))
-                {
-                    await Advance();
-                }
-
-                // Read until end of release object
-                var depth = Depth -1;
-
-                while (!ReadToDepth(depth))
-                {
-                    await Advance();
-                }
-            }
-
-            if (!IsFinalBlock)
-            {
-                await Advance();
-            }
-
-            while (!ReadToProperty("cve-list"u8, false))
-            {
-                await Advance();
-            }
-
-            var release = GetRelease();
-
-            if (release is null)
-            {
-                yield break;
-            }
-            else if (!release.Security && index > 0)
-            {
-                continue;
-            }
-
-            yield return release;
-        }
-    }
-
-    public Release? GetRelease()
-    {
-        string? releaseDate = null;
-        string? releaseVersion = null;
+        bool isSecurity = false;
 
         var reader = GetJsonReader();
     
@@ -285,7 +188,7 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
             if (reader.TokenType is JsonTokenType.EndArray)
             {
                 UpdateState(reader);
-                return null;
+                return isSecurity;
             }
             else if (!reader.IsProperty())
             {
@@ -293,57 +196,51 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
             }
             else if (reader.ValueTextEquals("release-date"u8))
             {
+                _writer.WritePropertyName(reader.GetValueSpan());
                 reader.Read();
-                releaseDate = reader.GetString();
+                var date = reader.GetString() ?? throw new Exception(JsonBenchmark.BADJSON);
+                _writer.WriteStringValue(date);
+                var days = GetDaysAgo(date, true);
+                _writer.WriteNumber("released-days-ago"u8, days);
             }
             else if (reader.ValueTextEquals("release-version"u8))
             {
+                _writer.WritePropertyName(reader.GetValueSpan());
                 reader.Read();
-                releaseVersion = reader.GetString();
+                _writer.WriteStringValue(reader.GetValueSpan());
             }
             else if (reader.ValueTextEquals("security"u8))
             {
+                _writer.WritePropertyName(reader.GetValueSpan());
                 reader.Read();
-                var isSecurity = reader.GetBoolean();
-
-                if (string.IsNullOrEmpty(releaseVersion) ||
-                    string.IsNullOrEmpty(releaseDate))
-                    {                   
-                        throw new Exception(JsonBenchmark.BADJSON);
-                    }
-
-                var releaseDaysAgo = GetDaysAgo(releaseDate, true);
-                var release = new Release(releaseVersion, isSecurity, releaseDate, releaseDaysAgo);
+                isSecurity = reader.GetBoolean();
+                _writer.WriteBooleanValue(isSecurity);
 
                 UpdateState(reader);
-                return release;
+                return isSecurity;
             }
         }
 
         if (reader.IsFinalBlock)
         {
-            return null;
+            return false;
         }
 
         throw new Exception(JsonBenchmark.BADJSONREAD);
     }
 
-    public IEnumerable<Cve> GetCves()
+    public void WriteCveEmpty()
     {
-        while(GetCve(out Cve? cve))
-        {
-            yield return cve;
-        }
-
-        yield break;
+        _writer.WritePropertyName("cve-list"u8);
+        _writer.WriteStartArray();
+        _writer.WriteEndArray();
     }
 
-    public bool GetCve([NotNullWhen(returnValue:true)] out Cve? cve)
+    public void WriteCveList()
     {
-        string? cveId = null;
-        cve = null;
-
         var reader = GetJsonReader();
+        _writer.WritePropertyName("cve-list"u8);
+        _writer.WriteStartArray();
 
         while (true)
         {
@@ -351,35 +248,31 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
 
             if (reader.TokenType is JsonTokenType.EndArray)
             {
-                return false;
+                _writer.WriteEndArray();
+                return;
+            }
+            else if (reader.TokenType is JsonTokenType.StartObject)
+            {
+                _writer.WriteStartObject();
+            }
+            else if (reader.TokenType is JsonTokenType.EndObject)
+            {
+                _writer.WriteEndObject();
             }
             else if (!reader.IsProperty())
             {
                 continue;
             }
-            else if (reader.ValueTextEquals("cve-id"u8))
+            else if (reader.ValueTextEquals("cve-id"u8) || 
+                     reader.ValueTextEquals("cve-url"u8))
             {
+                _writer.WritePropertyName(reader.GetValueSpan());
                 reader.Read();
-                cveId = reader.GetString();
-            }
-            else if (reader.ValueTextEquals("cve-url"u8))
-            {
-                reader.Read();
-                var cveUrl = reader.GetString();
-
-                if (string.IsNullOrEmpty(cveUrl) ||
-                    string.IsNullOrEmpty(cveId))
-                {                    
-                    throw new Exception(JsonBenchmark.BADJSON);
-                }
-
-                cve = new Cve(cveId, cveUrl);
-                reader.Read();
-                UpdateState(reader);
-                return true;
+                _writer.WriteStringValue(reader.GetValueSpan());
             }
 
         }
+
     }
 
     private static int GetDaysAgo(string date, bool positiveNumber = false)
@@ -388,10 +281,10 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
         var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
         return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
     }
-    public static async Task<ReleasesJsonReader> FromStream(Stream stream)
+    public static async Task<ReleasesJsonReaderReportWriter> FromStream(Stream stream, Utf8JsonWriter writer)
     {
         var (pipe, result) = await JsonPipeReader.ReadStream(stream);
-        return new ReleasesJsonReader(pipe, result);
+        return new ReleasesJsonReaderReportWriter(pipe, result, writer);
     }
 }
 
@@ -490,6 +383,56 @@ public class JsonPipeReader(Pipe pipe, ReadResult result)
     public bool ReadToProperty(ReadOnlySpan<byte> name, bool updateState = true)
     {
         var reader = GetJsonReader();
+        var found = ReadToProperty(ref reader, name);
+
+        if (updateState)
+        {
+            UpdateState(reader);
+        }
+
+        return found;
+    }
+
+    public bool ReadToPropertyValue<T>(ReadOnlySpan<byte> name, [NotNullWhen(true)] out T? value, bool updateState = true)
+    {
+        var reader = GetJsonReader();
+        var found = ReadToProperty(ref reader, name);
+        value = default;
+
+        if (found && reader.Read())
+        {
+            var type = typeof(T);
+
+            if (type == typeof(bool))
+            {
+                value = (T)(object)reader.GetBoolean();
+            }
+            else if (type == typeof(string))
+            {
+                var val = reader.GetString() ?? throw new Exception("BAD JSON");
+                value = (T)(object)val;
+            }
+            else
+            {
+                throw new Exception("Unsupported type");
+            }
+
+        }
+        else if (found)
+        {
+            found = false;
+        }
+
+        if (updateState)
+        {
+            UpdateState(reader);
+        }
+
+        return found;
+    }
+
+    public static bool ReadToProperty(ref Utf8JsonReader reader, ReadOnlySpan<byte> name)
+    {
         var found = false;
 
         while (reader.Read())
@@ -500,11 +443,6 @@ public class JsonPipeReader(Pipe pipe, ReadResult result)
                 found = true;
                 break;
             }
-        }
-
-        if (updateState)
-        {
-            UpdateState(reader);
         }
 
         return found;
@@ -529,6 +467,9 @@ public static class JsonExtensions
 {
     public static bool IsProperty(this Utf8JsonReader reader) =>
         reader.TokenType is JsonTokenType.PropertyName;
+
+    public static ReadOnlySpan<byte> GetValueSpan(this Utf8JsonReader reader) => 
+        reader.HasValueSequence ? reader.ValueSequence.ToArray() : reader.ValueSpan;
 
     public static void WriteProperty(this Utf8JsonWriter writer, ReadOnlySpan<byte> name, string value)
     {

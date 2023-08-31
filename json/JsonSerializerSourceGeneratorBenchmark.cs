@@ -1,48 +1,56 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ReleaseJson;
+using ReportJson;
+using Version = ReportJson.Version;
 
 namespace JsonSerializerSourceGeneratorBenchmark;
 public static class JsonSerializerSourceGeneratorBenchmark
 {
-    public static string Run(Stream stream)
+    public static async Task Run()
     {
-        stream.Position = 0;
-        var json = GetReportForStream(stream);
-        return json;
+        var json = await MakeReport();
+        Console.WriteLine(json);
+        Console.WriteLine();
+        Console.WriteLine($"Length: {json.Length}");
     }
 
-    public static string GetReportForStream(Stream stream)
+    public static async Task<string> MakeReport()
     {
-        var message = "JSON data is wrong";
-        var release = JsonSerializer.Deserialize<ReleaseJson.Release>(stream, ReleaseContext.Default.Release) ?? throw new Exception(message);
-        var version = GetVersionForRelease(release);
+        HttpClient httpClient= new();
+        var release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.URL, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
 
-        List<ReportJson.Version> versions= [version];
-        ReportJson.ReleaseReport report = new(DateTime.Today.ToShortDateString(), versions);
-        return JsonSerializer.Serialize(report, ReportContext.Default.ReleaseReport);
-    }
-
-    public static ReportJson.Version GetVersionForRelease(ReleaseJson.Release release)
-    {
-        List<ReportJson.Release> releases = [];
         int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        ReportJson.Version version = new(release.ChannelVersion, release.SupportPhase is "active" or "maintainence", release.EolDate ?? "Unknown", supportDays, releases);
+        Version version = new(release.ChannelVersion, release.SupportPhase is "active" or "maintainence", release.EolDate ?? "Unknown", supportDays, []);
+
+        foreach(var reportRelease in GetReleasesForReport(release))
+        {
+            version.Releases.Add(reportRelease);
+        }
+        
+        Report report = new(DateTime.Today.ToShortDateString(), [version]);
+        return JsonSerializer.Serialize(report, ReportContext.Default.Report);
+    }
+
+    // Get first and first security release
+    public static IEnumerable<Release> GetReleasesForReport(MajorRelease release)
+    {
         bool securityOnly = false;
         
-        foreach (ReleaseJson.ReleaseDetail releaseDetail in release.Releases)
+        foreach (ReleaseDetail releaseDetail in release.Releases)
         {
             if (!releaseDetail.Security && securityOnly)
             {
                 continue;
             }
             
-            var reportRelease = new ReportJson.Release(releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.Cves);
-            releases.Add(reportRelease);
+            var reportRelease = new Release(releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.Cves);
+            yield return reportRelease;
 
             if (releaseDetail.Security)
             {
-                break;
+                yield break;
             }
             else if (!securityOnly)
             {
@@ -50,23 +58,23 @@ public static class JsonSerializerSourceGeneratorBenchmark
             }
         }
 
-        return version;
-
-        static int GetDaysAgo(string date, bool positiveNumber = false)
-        {
-            bool success = DateTime.TryParse(date, out var day);
-            var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
-            return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
-        }
-    }   
+        yield break;
+    }
+   
+    static int GetDaysAgo(string date, bool positiveNumber = false)
+    {
+        bool success = DateTime.TryParse(date, out var day);
+        var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
+        return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
+    }
 }
 
-[JsonSerializable(typeof(ReleaseJson.Release))]
+[JsonSerializable(typeof(MajorRelease))]
 public partial class ReleaseContext : JsonSerializerContext
 {
 }
 
-[JsonSerializable(typeof(ReportJson.ReleaseReport))]
+[JsonSerializable(typeof(Report))]
 public partial class ReportContext : JsonSerializerContext
 {
 }

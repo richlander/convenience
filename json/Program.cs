@@ -1,33 +1,41 @@
-﻿using System.Text;
-using System.Text.Unicode;
-using BenchmarkDotNet.Running;
-using ReleaseJson;
-using Tests;
+﻿using System.Diagnostics;
 
-// BenchmarkRunner.Run(typeof(JsonTests));
+List<Benchmark> benchmarks =
+[
+    new(nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), async () => await JsonSerializerBenchmark.JsonSerializerBenchmark.Run()),
+    new(nameof(JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark), async () => await JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run()),
+    new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async () => await JsonDocumentBenchmark.JsonDocumentBenchmark.Run()),
+    new(nameof(Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark), async () => await Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run()),
+    new(nameof(Utf8JsonReaderWriterRawBenchmark.Utf8JsonReaderWriterRawBenchmark), async () => await Utf8JsonReaderWriterRawBenchmark.Utf8JsonReaderWriterRawBenchmark.Run()),
+    new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.Run()),
+];
 
-// Console.WriteLine("Press any key");
-// Console.ReadKey();
+int index = 4;
 
-var json = await Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run();
-Console.WriteLine(json);
+if (args is {Length: >0} && args[0] is {Length: > 0})
+{
+    index = int.Parse(args[0]);
+}
 
-//await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.Run();
+var benchmark = benchmarks[index];
+var stopwatch = Stopwatch.StartNew();
 
-// List<BenchmarkResult> results =
-// [
-//     new (nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), JsonSerializerBenchmark.JsonSerializerBenchmark.Run()),
-//     new (nameof(JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark), JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run()),
-//     new (nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), JsonDocumentBenchmark.JsonDocumentBenchmark.Run()),
-//     new (nameof(Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark), Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run())
-// ];
+GC.Collect();
+GC.Collect();
+var beforeInfo = GC.GetGCMemoryInfo();
 
-// foreach (var result in results)
-// {
-//     var json = await result.Result;
-//     Console.WriteLine($"*********{result.Name}");
-//     Console.WriteLine(json);
-//     Console.WriteLine($"Length: {json.Length}");
-// }
+Console.WriteLine($"********{benchmark.Name}");
+stopwatch.Restart();
+await benchmark.Test();
+stopwatch.Stop();
+GC.Collect();
+var afterInfo = GC.GetGCMemoryInfo();
 
-// public record BenchmarkResult(string Name, Task<string> Result);
+
+var heapDiff = afterInfo.HeapSizeBytes - beforeInfo.HeapSizeBytes;
+Console.WriteLine($"Before:{nameof(GCMemoryInfo.HeapSizeBytes)}: {beforeInfo.HeapSizeBytes}");
+Console.WriteLine($"After:{nameof(GCMemoryInfo.HeapSizeBytes)}: {afterInfo.HeapSizeBytes}");
+Console.WriteLine($"Diff:{nameof(GCMemoryInfo.HeapSizeBytes)}: {heapDiff}");
+Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
+
+public record Benchmark(string Name, Func<Task> Test);
