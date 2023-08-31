@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Net;
 
 List<Benchmark> benchmarks =
 [
@@ -10,32 +11,59 @@ List<Benchmark> benchmarks =
     new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.Run()),
 ];
 
-int index = 4;
+int index = -1;
 
 if (args is {Length: >0} && args[0] is {Length: > 0})
 {
     index = int.Parse(args[0]);
 }
 
-var benchmark = benchmarks[index];
-var stopwatch = Stopwatch.StartNew();
+if (index is -1)
+{
+    foreach (var benchmark in benchmarks)
+    {
+        await RunMiniBenchmark(benchmark);
+    }
 
-GC.Collect();
-GC.Collect();
-var beforeInfo = GC.GetGCMemoryInfo();
+    foreach (var benchmark in benchmarks)
+    {
+        await RunMiniBenchmark(benchmark);
+    }
+}
+else
+{
+    await RunFullBenchmark(benchmarks[index]);
+}
 
-Console.WriteLine($"********{benchmark.Name}");
-stopwatch.Restart();
-await benchmark.Test();
-stopwatch.Stop();
-GC.Collect();
-var afterInfo = GC.GetGCMemoryInfo();
+static async Task RunMiniBenchmark(Benchmark benchmark)
+{
+    Console.WriteLine($"********{benchmark.Name}");
+    var stopwatch = Stopwatch.StartNew();
+    await benchmark.Test();
+    stopwatch.Stop();
+    Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
+}
+
+static async Task RunFullBenchmark(Benchmark benchmark)
+{
+    var stopwatch = Stopwatch.StartNew();
+    GC.Collect();
+    GC.Collect();
+    var beforeInfo = GC.GetGCMemoryInfo();
+
+    Console.WriteLine($"********{benchmark.Name}");
+    stopwatch.Restart();
+    await benchmark.Test();
+    stopwatch.Stop();
+    GC.Collect();
+    var afterInfo = GC.GetGCMemoryInfo();
 
 
-var heapDiff = afterInfo.HeapSizeBytes - beforeInfo.HeapSizeBytes;
-Console.WriteLine($"Before:{nameof(GCMemoryInfo.HeapSizeBytes)}: {beforeInfo.HeapSizeBytes}");
-Console.WriteLine($"After:{nameof(GCMemoryInfo.HeapSizeBytes)}: {afterInfo.HeapSizeBytes}");
-Console.WriteLine($"Diff:{nameof(GCMemoryInfo.HeapSizeBytes)}: {heapDiff}");
-Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
+    var heapDiff = afterInfo.HeapSizeBytes - beforeInfo.HeapSizeBytes;
+    Console.WriteLine($"Before:{nameof(GCMemoryInfo.HeapSizeBytes)}: {beforeInfo.HeapSizeBytes}");
+    Console.WriteLine($"After:{nameof(GCMemoryInfo.HeapSizeBytes)}: {afterInfo.HeapSizeBytes}");
+    Console.WriteLine($"Diff:{nameof(GCMemoryInfo.HeapSizeBytes)}: {heapDiff}");
+    Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
+}
 
 public record Benchmark(string Name, Func<Task> Test);
