@@ -379,7 +379,7 @@ public class JsonPipeReader(Pipe pipe, ReadResult result)
 
         return found;
     }
-
+    
     public bool ReadToProperty(ReadOnlySpan<byte> name, bool updateState = true)
     {
         var reader = GetJsonReader();

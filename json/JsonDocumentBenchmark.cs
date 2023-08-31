@@ -120,5 +120,3 @@ public static class JsonDocumentBenchmark
         return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
     }
 }
-
-
