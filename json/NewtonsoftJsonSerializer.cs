@@ -3,12 +3,12 @@ using Newtonsoft.Json;
 namespace NewtonsoftJsonSerializerBenchmark;
 public class NewtonsoftJsonSerializerBenchmark
 {
-    public static async Task Run()
+    public static async Task<int> Run()
     {
         var json = await MakeReport();
         Console.WriteLine(json);
         Console.WriteLine();
-        Console.WriteLine($"Length: {json.Length}");
+        return json.Length;
     }
 
     public static async Task<string> MakeReport()

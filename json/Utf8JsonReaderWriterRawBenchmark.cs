@@ -8,7 +8,7 @@ using System.Text.Json;
 namespace Utf8JsonReaderWriterRawBenchmark;
 public static class Utf8JsonReaderWriterRawBenchmark
 {
-    public static async Task Run()
+    public static async Task<int> Run()
     {
         var stream = await MakeReport();
 
@@ -17,8 +17,7 @@ public static class Utf8JsonReaderWriterRawBenchmark
             Console.Write((char)stream.ReadByte());
         }
 
-        Console.WriteLine();
-        Console.WriteLine($"Length: {stream.Length}");
+        return (int)stream.Length;
     }
 
     public static async Task<Stream> MakeReport()

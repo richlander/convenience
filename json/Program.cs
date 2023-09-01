@@ -3,12 +3,12 @@ using System.Net;
 
 List<Benchmark> benchmarks =
 [
-    new(nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), async () => await JsonSerializerBenchmark.JsonSerializerBenchmark.Run()),
-    new(nameof(JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark), async () => await JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run()),
-    new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async () => await JsonDocumentBenchmark.JsonDocumentBenchmark.Run()),
-    new(nameof(Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark), async () => await Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run()),
-    new(nameof(Utf8JsonReaderWriterRawBenchmark.Utf8JsonReaderWriterRawBenchmark), async () => await Utf8JsonReaderWriterRawBenchmark.Utf8JsonReaderWriterRawBenchmark.Run()),
-    new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.Run()),
+    new(nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), async Task<int> () => await JsonSerializerBenchmark.JsonSerializerBenchmark.Run()),
+    new(nameof(JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run()),
+    new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async Task<int> () => await JsonDocumentBenchmark.JsonDocumentBenchmark.Run()),
+    new(nameof(Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark), async Task<int> () => await Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run()),
+    new(nameof(Utf8JsonReaderWriterRawBenchmark.Utf8JsonReaderWriterRawBenchmark), async Task<int> () => await Utf8JsonReaderWriterRawBenchmark.Utf8JsonReaderWriterRawBenchmark.Run()),
+    new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async Task<int> () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.Run()),
 ];
 
 int index = -1;
@@ -20,15 +20,31 @@ if (args is {Length: >0} && args[0] is {Length: > 0})
 
 if (index is -1)
 {
-    for (int i = 0; i < 6; i ++)
+    List<string> log = [];
+    log.Add("Pass,Benchmark,Duration,JSONLength");
+    for (int i = 0; i < 10; i ++)
     {
-        Console.WriteLine();
-        Console.WriteLine();
-        Console.WriteLine($"***Pass {i} ***************************");
+        Console.WriteLine("***");
+        Console.WriteLine($"*** Pass {i} ****************");
+        Console.WriteLine("***");
         foreach (var benchmark in benchmarks)
         {
-            await RunMiniBenchmark(benchmark);
+            Console.WriteLine();
+            Console.WriteLine($"*** {benchmark.Name} ***");
+            var stopwatch = Stopwatch.StartNew();
+            var length = await benchmark.Test();
+            stopwatch.Stop();
+            log.Add($"{i},{benchmark.Name},{stopwatch.ElapsedMilliseconds},{length}");
+            Console.WriteLine();
+            Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}; JSON Length: {length}");
         }
+    }
+
+    Console.WriteLine();
+
+    foreach (var line in log)
+    {
+        Console.WriteLine(line);
     }
 }
 else
@@ -36,14 +52,6 @@ else
     await RunFullBenchmark(benchmarks[index]);
 }
 
-static async Task RunMiniBenchmark(Benchmark benchmark)
-{
-    Console.WriteLine($"********{benchmark.Name}");
-    var stopwatch = Stopwatch.StartNew();
-    await benchmark.Test();
-    stopwatch.Stop();
-    Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
-}
 
 static async Task RunFullBenchmark(Benchmark benchmark)
 {
@@ -67,4 +75,4 @@ static async Task RunFullBenchmark(Benchmark benchmark)
     Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
 }
 
-public record Benchmark(string Name, Func<Task> Test);
+public record Benchmark(string Name, Func<Task<int>> Test);
