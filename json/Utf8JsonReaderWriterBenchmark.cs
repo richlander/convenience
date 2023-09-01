@@ -25,17 +25,17 @@ public static class Utf8JsonReaderWriterBenchmark
         var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.URL, HttpCompletionOption.ResponseHeadersRead);
         var stream = await releaseMessage.Content.ReadAsStreamAsync();
-        var releases = await ReleasesJsonReader.FromStream(stream);
+        var releasesReader = await ReleasesJsonReader.FromStream(stream);
         var memory = new MemoryStream();
-        var writer = new ReleaseJsonWriter(releases, memory);
-        await writer.Write();
+        var reportWriter = new ReportJsonWriter(releasesReader, memory);
+        await reportWriter.Write();
         memory.Flush();
         memory.Position= 0;
         return memory;
     }
 }
 
-public class ReleaseJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
+public class ReportJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
 {
     private readonly Utf8JsonWriter _writer = new(memory);
     private readonly ReleasesJsonReader _releasesReader = releasesReader;

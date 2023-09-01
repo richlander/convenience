@@ -3,6 +3,7 @@ using System.Text.Json;
 using ReportJson;
 using ReleaseJson;
 using Version = ReportJson.Version;
+using System.Runtime.InteropServices;
 
 namespace JsonSerializerBenchmark;
 public class JsonSerializerBenchmark
@@ -20,16 +21,9 @@ public class JsonSerializerBenchmark
         HttpClient httpClient= new();
         var release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.URL) ?? throw new Exception(JsonBenchmark.BADJSON);
         int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        Version version = new(release.ChannelVersion, release.SupportPhase is "active" or "maintainence", release.EolDate ?? "Unknown", supportDays, []);
-
-        foreach(var reportRelease in GetReleasesForReport(release))
-        {
-            version.Releases.Add(reportRelease);
-        }
-        
-        Report report = new(DateTime.Today.ToShortDateString(), [version]);
-        var json = JsonSerializer.Serialize(report);
-        return json;
+        bool supported = release.SupportPhase is "active" or "maintainence";
+        Version version = new(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleasesForReport(release).ToList());        Report report = new(DateTime.Today.ToShortDateString(), [version]);
+        return JsonSerializer.Serialize(report);
     }
 
     // Get first and first security release

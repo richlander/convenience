@@ -16,21 +16,20 @@ public static class JsonDocumentBenchmark
 
     public static async Task<string> MakeReport()
     {
+        // Make network call
         var httpClient = new HttpClient();
         using var responseMessage = await httpClient.GetAsync(JsonBenchmark.URL, HttpCompletionOption.ResponseHeadersRead);
         var stream = await responseMessage.Content.ReadAsStreamAsync();
-        var json = GetReportForStream(stream);
-        return json;
-    }
 
-    public static string GetReportForStream(Stream stream)
-    {
+        // Parse Json from stream
         var doc = JsonNode.Parse(stream) ?? throw new Exception(JsonBenchmark.BADJSON);
         var version = doc["channel-version"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
         var supportPhase = doc["support-phase"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
+        var supported = supportPhase is "active" or "maintenance";
         var eolDate = doc["eol-date"]?.ToString();
         var releases = doc["releases"]?.AsArray() ?? throw new Exception(JsonBenchmark.BADJSON);
-        var supported = supportPhase is "active" or "maintenance";
+        
+        // Generate report
         var reportReleaseArray = new JsonArray();
 
         foreach(var releaseReport in GetReleasesForReport(releases))
@@ -38,25 +37,19 @@ public static class JsonDocumentBenchmark
             reportReleaseArray.Add(releaseReport);
         }
 
-        var reportVersion = new JsonObject()
-        {
-            ["version"] = version,
-            ["supported"] = supported,
-            ["eol-date"] = eolDate,
-            ["releases"] = reportReleaseArray
-        };
-
-        if (eolDate is not null)
-        {
-            reportVersion.Add("support-ends-in-days", GetDaysAgo(eolDate, true));
-        }
-
         var report = new JsonObject()
         {
             ["report-date"] = DateTime.Now.ToShortDateString(),
             ["versions"] = new JsonArray()
             {
-                reportVersion
+                new JsonObject()
+                {
+                    ["version"] = version,
+                    ["supported"] = supported,
+                    ["eol-date"] = eolDate,
+                    ["support-ends-in-days"] = eolDate is null ? null : GetDaysAgo(eolDate, true),
+                    ["releases"] = reportReleaseArray,
+                }
             }
         };
 
