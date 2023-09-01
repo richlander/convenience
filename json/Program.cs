@@ -22,7 +22,7 @@ if (index is -1)
 {
     List<string> log = [];
     log.Add("Pass,Benchmark,Duration,JSONLength");
-    for (int i = 0; i < 10; i ++)
+    for (int i = 0; i < 16; i ++)
     {
         Console.WriteLine("***");
         Console.WriteLine($"*** Pass {i} ****************");
