@@ -116,15 +116,15 @@ static async Task RunMemoryBenchmark(Benchmark benchmark)
     var afterCompiledILBytes = JitInfo.GetCompiledILBytes();
 
     Console.WriteLine();
-    Console.WriteLine($"Length: {length}");
-    Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
-
-    Console.WriteLine();
     Console.WriteLine($"{nameof(Environment.WorkingSet)}: {afterWorkingSet - beforeWorkingSet}");
     Console.WriteLine($"{nameof(GC.GetTotalAllocatedBytes)}: {afterAllocatedBytes - beforeAllocatedBytes}");
     Console.WriteLine($"{nameof(JitInfo.GetCompiledMethodCount)}: {afterCompiledMethodCount - beforeCompiledMethodCount}");
     Console.WriteLine($"{nameof(JitInfo.GetCompiledILBytes)}: {afterCompiledILBytes - beforeCompiledILBytes}");    
     Console.WriteLine($"{nameof(GC.CollectionCount)}: {afterGCCount - beforeGCCount }");
+
+    Console.WriteLine();
+    Console.WriteLine($"Length: {length}");
+    Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
 
     Console.WriteLine();
     Console.WriteLine($"{nameof(RuntimeInformation.OSArchitecture)}: {RuntimeInformation.OSArchitecture}");
