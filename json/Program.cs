@@ -101,11 +101,9 @@ static async Task RunMemoryBenchmark(Benchmark benchmark)
     
     Console.WriteLine($"********{benchmark.Name}");
     var before = Environment.WorkingSet;
-
     var stopwatch = Stopwatch.StartNew();
     await benchmark.Test();
     stopwatch.Stop();
-    
     var after = Environment.WorkingSet;
     Console.WriteLine($"{nameof(Environment.WorkingSet)}: {after - before}");
     Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");

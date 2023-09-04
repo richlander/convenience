@@ -17,6 +17,7 @@ public static class Utf8JsonReaderWriterRawBenchmark
             Console.Write((char)stream.ReadByte());
         }
 
+        Console.WriteLine();
         return (int)stream.Length;
     }
 
