@@ -102,12 +102,13 @@ static async Task RunMemoryBenchmark(Benchmark benchmark)
     var beforeCount = GC.CollectionCount(0);
     var before = Environment.WorkingSet;
     var stopwatch = Stopwatch.StartNew();
-    await benchmark.Test();
+    var length = await benchmark.Test();
     stopwatch.Stop();
     var after = Environment.WorkingSet;
     var afterCount = GC.CollectionCount(0);
+    Console.WriteLine($"Length: {length}");
     Console.WriteLine($"{nameof(Environment.WorkingSet)}: {after - before}");
-    Console.WriteLine($"{nameof(GC.CollectionCount)}: {afterCount - beforeCount}");
+    Console.WriteLine($"{nameof(GC.CollectionCount)}: {afterCount - beforeCount }");
     Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
 }
 
