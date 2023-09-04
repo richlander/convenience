@@ -5,5 +5,5 @@ public static class JsonBenchmark
     public const string BADJSON = "JSON data is wrong";
     public const string BADJSONREAD = "Cannot read JSON data.";
 
-    public static string Url => FakeUrl;
+    public static string Url => OfficialUrl;
 }

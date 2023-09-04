@@ -100,21 +100,14 @@ static async Task RunMemoryBenchmark(Benchmark benchmark)
 {
     
     Console.WriteLine($"********{benchmark.Name}");
-    GC.Collect();
-    GC.Collect();
-    var beforeCollectionCount = GC.CollectionCount(0);
-    var beforeInfo = GC.GetGCMemoryInfo();
+    var before = Environment.WorkingSet;
 
     var stopwatch = Stopwatch.StartNew();
     await benchmark.Test();
     stopwatch.Stop();
-    GC.Collect();
-    var afterInfo = GC.GetGCMemoryInfo();
-    var heapDiff = afterInfo.HeapSizeBytes - beforeInfo.HeapSizeBytes;
-    Console.WriteLine($"Before:{nameof(GC.CollectionCount)}: {beforeCollectionCount}; After: {GC.CollectionCount(0)}");
-    Console.WriteLine($"Before:{nameof(GCMemoryInfo.HeapSizeBytes)}: {beforeInfo.HeapSizeBytes}");
-    Console.WriteLine($"After:{nameof(GCMemoryInfo.HeapSizeBytes)}: {afterInfo.HeapSizeBytes}");
-    Console.WriteLine($"Diff:{nameof(GCMemoryInfo.HeapSizeBytes)}: {heapDiff}");
+    
+    var after = Environment.WorkingSet;
+    Console.WriteLine($"{nameof(Environment.WorkingSet)}: {after - before}");
     Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
 }
 
