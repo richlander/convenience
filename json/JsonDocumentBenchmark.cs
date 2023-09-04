@@ -18,7 +18,7 @@ public static class JsonDocumentBenchmark
     {
         // Make network call
         var httpClient = new HttpClient();
-        using var responseMessage = await httpClient.GetAsync(JsonBenchmark.URL, HttpCompletionOption.ResponseHeadersRead);
+        using var responseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         var stream = await responseMessage.Content.ReadAsStreamAsync();
 
         // Parse Json from stream

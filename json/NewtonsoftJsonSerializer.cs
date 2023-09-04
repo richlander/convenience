@@ -14,7 +14,7 @@ public class NewtonsoftJsonSerializerBenchmark
     public static async Task<string> MakeReport()
     {
         var httpClient = new HttpClient();
-        using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.URL, HttpCompletionOption.ResponseHeadersRead);
+        using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         var stream = await releaseMessage.Content.ReadAsStreamAsync();
 
         JsonSerializer serializer = new();

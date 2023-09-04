@@ -23,7 +23,7 @@ public static class Utf8JsonReaderWriterRawBenchmark
     public static async Task<Stream> MakeReport()
     {
         var httpClient = new HttpClient();
-        using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.URL, HttpCompletionOption.ResponseHeadersRead);
+        using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         var stream = await releaseMessage.Content.ReadAsStreamAsync();
         var memory = new MemoryStream();
         Utf8JsonWriter utf8JsonWriterwriter = new(memory);
