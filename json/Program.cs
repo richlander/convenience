@@ -115,6 +115,7 @@ static async Task RunMemoryBenchmark(Benchmark benchmark)
     var afterCompiledMethodCount = JitInfo.GetCompiledMethodCount();
     var afterCompiledILBytes = JitInfo.GetCompiledILBytes();
 
+    Console.WriteLine();
     Console.WriteLine($"Length: {length}");
     Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
 
