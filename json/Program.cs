@@ -25,16 +25,18 @@ if (index is -1)
 {
     index = 16;
 }
+
 if (index >= 10)
 {
     int iterations = index;
-    List<BenchmarkResult> bechmarkResults = [];
+    List<BenchmarkResult> benchmarkResults = [];
 
     for (int i = 0; i < iterations; i ++)
     {
         Console.WriteLine("***");
         Console.WriteLine($"*** Pass {i} ****************");
         Console.WriteLine("***");
+
         foreach (var benchmark in benchmarks)
         {
             Console.WriteLine();
@@ -44,14 +46,14 @@ if (index >= 10)
             stopwatch.Stop();
             Console.WriteLine();
             Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}; JSON Length: {length}");
-            bechmarkResults.Add(new(benchmark.Name, i, stopwatch.ElapsedMilliseconds,length));
+            benchmarkResults.Add(new(i, benchmark.Name, stopwatch.ElapsedMilliseconds,length));
         }
     }
 
     Console.WriteLine();
 
     Console.WriteLine("Pass,Benchmark,Duration,JSONLength");
-    foreach (var item in bechmarkResults)
+    foreach (var item in benchmarkResults)
     {
         Console.WriteLine($"{item.Pass},{item.Name},{item.Duration},{item.Length}");
     }
@@ -63,7 +65,7 @@ if (index >= 10)
     var warmupIterations = int.Min(6, iterations / 4);
     var warmupSkipCount = warmupIterations * benchmarks.Count;
     var outlierSkipCount = (int)(iterations * 0.1);
-    var resultValues = bechmarkResults.Skip(warmupSkipCount).GroupBy(r => r.Name).Select(g => new {Name=g.Key, Values=g.Select(r => r.Duration).Order().Skip(outlierSkipCount).SkipLast(outlierSkipCount)});
+    var resultValues = benchmarkResults.Skip(warmupSkipCount).GroupBy(r => r.Name).Select(g => new {Name=g.Key, Values=g.Select(r => r.Duration).Order().Skip(outlierSkipCount).SkipLast(outlierSkipCount)});
     var results = resultValues.Select(r => new {Name=r.Name, Values=r.Values.ToList(), Average=r.Values.Average()}).ToList();
     
     var expectedIterations = iterations - warmupIterations - (outlierSkipCount * 2);
@@ -71,7 +73,7 @@ if (index >= 10)
     Console.WriteLine($"Total passes: {iterations}");
     Console.WriteLine($"Warmup passes: {warmupIterations}");
     Console.WriteLine($"Outlier passes ignored: {outlierSkipCount * 2}");
-    Console.WriteLine($"Measured passes: {results.Count}");
+    Console.WriteLine($"Measured passes: {results[0].Values.Count}");
     Console.WriteLine();
 
     foreach (var result in results.OrderBy(r => r.Average))
@@ -118,4 +120,4 @@ static async Task RunMemoryBenchmark(Benchmark benchmark)
 
 public record Benchmark(string Name, Func<Task<int>> Test);
 
-public record BenchmarkResult(string Name, int Pass, long Duration, int Length);
+public record BenchmarkResult(int Pass, string Name, long Duration, int Length);
