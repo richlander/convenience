@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
+using System.IO.Pipelines;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 
 List<Benchmark> benchmarks =
 [
@@ -20,9 +22,14 @@ if (args is {Length: >0} && args[0] is {Length: > 0})
 
 if (index is -1)
 {
-    List<string> log = [];
-    log.Add("Pass,Benchmark,Duration,JSONLength");
-    for (int i = 0; i < 16; i ++)
+    index = 16;
+}
+if (index >= 10)
+{
+    int iterations = index;
+    List<BenchmarkResult> bechmarkResults = [];
+
+    for (int i = 0; i < iterations; i ++)
     {
         Console.WriteLine("***");
         Console.WriteLine($"*** Pass {i} ****************");
@@ -34,40 +41,71 @@ if (index is -1)
             var stopwatch = Stopwatch.StartNew();
             var length = await benchmark.Test();
             stopwatch.Stop();
-            log.Add($"{i},{benchmark.Name},{stopwatch.ElapsedMilliseconds},{length}");
             Console.WriteLine();
             Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}; JSON Length: {length}");
+            bechmarkResults.Add(new(benchmark.Name, i, stopwatch.ElapsedMilliseconds,length));
         }
     }
 
     Console.WriteLine();
 
-    foreach (var line in log)
+    Console.WriteLine("Pass,Benchmark,Duration,JSONLength");
+    foreach (var item in bechmarkResults)
     {
-        Console.WriteLine(line);
+        Console.WriteLine($"{item.Pass},{item.Name},{item.Duration},{item.Length}");
     }
+
+    Console.WriteLine();
+    Console.WriteLine();
+
+    // Remove warmup iterations and outliers (using a TRIMMEAN-like approach)
+    var warmupIterations = int.Min(6, iterations / 4);
+    var warmupSkipCount = warmupIterations * benchmarks.Count;
+    var outlierSkipCount = (int)(iterations * 0.1);
+    var resultValues = bechmarkResults.Skip(warmupSkipCount).GroupBy(r => r.Name).Select(g => new {Name=g.Key, Values=g.Select(r => r.Duration).Order().Skip(outlierSkipCount).SkipLast(outlierSkipCount)});
+    var results = resultValues.Select(r => new {Name=r.Name, Values=r.Values.ToList(), Average=r.Values.Average()}).ToList();
+    
+    var expectedIterations = iterations - warmupIterations - (outlierSkipCount * 2);
+
+    Console.WriteLine($"Total passes: {iterations}");
+    Console.WriteLine($"Warmup passes: {warmupIterations}");
+    Console.WriteLine($"Outlier passes ignored: {outlierSkipCount * 2}");
+    Console.WriteLine($"Measured passes: {results.Count}");
+    Console.WriteLine();
+
+    foreach (var result in results.OrderBy(r => r.Average))
+    {
+        Console.WriteLine($"{result.Name}: {result.Average:.#}");
+
+        if (result.Values.Count != expectedIterations)
+        {
+            Console.WriteLine($"***Warning: iterator count doesn't match. Expected {expectedIterations} and observed {result.Values.Count}.");
+        }
+    }
+}
+else if (index < benchmarks.Count)
+{
+    await RunMemoryBenchmark(benchmarks[index]);
 }
 else
 {
-    await RunFullBenchmark(benchmarks[index]);
+    Console.WriteLine("Bad input. Try again.");
 }
 
 
-static async Task RunFullBenchmark(Benchmark benchmark)
+static async Task RunMemoryBenchmark(Benchmark benchmark)
 {
-    var stopwatch = Stopwatch.StartNew();
+    
+    Console.WriteLine($"********{benchmark.Name}");
     GC.Collect();
     GC.Collect();
     var beforeInfo = GC.GetGCMemoryInfo();
 
-    Console.WriteLine($"********{benchmark.Name}");
-    stopwatch.Restart();
+    var stopwatch = Stopwatch.StartNew();
     await benchmark.Test();
     stopwatch.Stop();
     GC.Collect();
     var afterInfo = GC.GetGCMemoryInfo();
-
-
     var heapDiff = afterInfo.HeapSizeBytes - beforeInfo.HeapSizeBytes;
     Console.WriteLine($"Before:{nameof(GCMemoryInfo.HeapSizeBytes)}: {beforeInfo.HeapSizeBytes}");
     Console.WriteLine($"After:{nameof(GCMemoryInfo.HeapSizeBytes)}: {afterInfo.HeapSizeBytes}");
@@ -76,3 +114,5 @@ static async Task RunFullBenchmark(Benchmark benchmark)
 }
 
 public record Benchmark(string Name, Func<Task<int>> Test);
+
+public record BenchmarkResult(string Name, int Pass, long Duration, int Length);
