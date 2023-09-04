@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.IO.Pipelines;
 using System.Net;
+using System.Runtime;
 using System.Security.Cryptography.X509Certificates;
 using Newtonsoft.Json.Serialization;
 
@@ -99,16 +100,26 @@ else
 static async Task RunMemoryBenchmark(Benchmark benchmark)
 {
     Console.WriteLine($"********{benchmark.Name}");
-    var beforeCount = GC.CollectionCount(0);
-    var before = Environment.WorkingSet;
+    var beforeGCCount = GC.CollectionCount(0);
+    var beforeWorkingSet = Environment.WorkingSet;
+    var beforeAllocatedBytes = GC.GetTotalAllocatedBytes();
+    var beforeCompiledMethodCount = JitInfo.GetCompiledMethodCount();
+    var beforeCompiledILBytes = JitInfo.GetCompiledILBytes();
     var stopwatch = Stopwatch.StartNew();
     var length = await benchmark.Test();
     stopwatch.Stop();
-    var after = Environment.WorkingSet;
-    var afterCount = GC.CollectionCount(0);
+    var afterGCCount = GC.CollectionCount(0);
+    var afterWorkingSet = Environment.WorkingSet;
+    var afterAllocatedBytes = GC.GetTotalAllocatedBytes();
+    var afterCompiledMethodCount = JitInfo.GetCompiledMethodCount();
+    var afterCompiledILBytes = JitInfo.GetCompiledILBytes();
+
     Console.WriteLine($"Length: {length}");
-    Console.WriteLine($"{nameof(Environment.WorkingSet)}: {after - before}");
-    Console.WriteLine($"{nameof(GC.CollectionCount)}: {afterCount - beforeCount }");
+    Console.WriteLine($"{nameof(Environment.WorkingSet)}: {afterWorkingSet - beforeWorkingSet}");
+    Console.WriteLine($"{nameof(GC.CollectionCount)}: {afterGCCount - beforeGCCount }");
+    Console.WriteLine($"{nameof(GC.GetTotalAllocatedBytes)}: {afterAllocatedBytes - beforeAllocatedBytes}");
+    Console.WriteLine($"{nameof(JitInfo.GetCompiledMethodCount)}: {afterCompiledMethodCount - beforeCompiledMethodCount}");
+    Console.WriteLine($"{nameof(JitInfo.GetCompiledILBytes)}: {afterCompiledILBytes - beforeCompiledILBytes}");    
     Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
 }
 
