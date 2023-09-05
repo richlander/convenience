@@ -1,10 +1,6 @@
 ﻿using System.Diagnostics;
-using System.IO.Pipelines;
-using System.Net;
 using System.Runtime;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
-using Newtonsoft.Json.Serialization;
 
 List<Benchmark> benchmarks =
 [
@@ -12,11 +8,12 @@ List<Benchmark> benchmarks =
     new(nameof(JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run()),
     new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async Task<int> () => await JsonDocumentBenchmark.JsonDocumentBenchmark.Run()),
     new(nameof(Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark), async Task<int> () => await Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run()),
+    new(nameof(Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderStreamWriterBenchmark), async Task<int> () => await Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderStreamWriterBenchmark.Run()),
     new(nameof(Utf8JsonReaderWriterRawBenchmark.Utf8JsonReaderWriterRawBenchmark), async Task<int> () => await Utf8JsonReaderWriterRawBenchmark.Utf8JsonReaderWriterRawBenchmark.Run()),
     new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async Task<int> () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.Run()),
 ];
 
-int index = -1;
+int index = 4;
 
 if (args is {Length: >0} && args[0] is {Length: > 0})
 {
