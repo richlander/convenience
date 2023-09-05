@@ -23,10 +23,11 @@ public static class Utf8JsonReaderStreamWriterBenchmark
     public static async Task<Stream> MakeReport()
     {
         var httpClient = new HttpClient();
-        using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseContentRead);
+        using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
+        releaseMessage.EnsureSuccessStatusCode();
         var jsonStream = await releaseMessage.Content.ReadAsStreamAsync();
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(JsonStreamReader.Size);
-        var releasesReader = ReleasesJsonReader.FromStream(jsonStream, rentedArray);
+        var releasesReader = await ReleasesJsonReader.FromStream(jsonStream, rentedArray);
         var memory = new MemoryStream();
         var reportWriter = new ReportJsonWriter(releasesReader, memory);
         await reportWriter.Write();
@@ -390,9 +391,9 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count) : JsonS
         return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
     }
 
-    public static ReleasesJsonReader FromStream(Stream stream, byte[] buffer)
+    public static async Task<ReleasesJsonReader> FromStream(Stream stream, byte[] buffer)
     {
-        int read = stream.Read(buffer);
+        int read = await stream.ReadAsync(buffer);
         return new ReleasesJsonReader(stream, buffer, read);
     }
 }
@@ -415,7 +416,7 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
 
     public Utf8JsonReader GetJsonReader()
     {
-        ReadOnlySpan<byte> slice = _bytesConsumed > 0 ? _buffer.AsSpan()[(int)_bytesConsumed..] : _buffer;
+        ReadOnlySpan<byte> slice = _bytesConsumed > 0 || _readCount < Size ? _buffer.AsSpan()[(int)_bytesConsumed.._readCount] : _buffer;
         var reader = new Utf8JsonReader(slice, isFinalBlock : IsFinalBlock, state: _readerState);
         return reader;
     }
@@ -426,7 +427,7 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
 
     public static int Size => 4 * 1024;
 
-    public bool IsFinalBlock => _readCount < Size;
+    public bool IsFinalBlock => false;
 
     public async Task Advance()
     {
@@ -441,7 +442,7 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
     private int FlipBuffer()
     {
         var buffer = _buffer.AsSpan();
-        var text = buffer[(int)_bytesConsumed..];
+        var text = buffer[(int)_bytesConsumed.._readCount];
         text.CopyTo(buffer);
         _bytesConsumed = 0;
         return text.Length;
