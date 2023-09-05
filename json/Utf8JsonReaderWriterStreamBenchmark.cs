@@ -254,6 +254,11 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count) : JsonS
                 await Advance();
             }
 
+            while (!ReadToProperty("cve-list"u8, false))
+            {
+                await Advance();
+            }
+
             var release = GetRelease();
 
             if (release is null)
