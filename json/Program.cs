@@ -13,7 +13,7 @@ List<Benchmark> benchmarks =
     new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async Task<int> () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.Run()),
 ];
 
-int index = 4;
+int index = -1;
 
 if (args is {Length: >0} && args[0] is {Length: > 0})
 {
