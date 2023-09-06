@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 
 namespace Utf8JsonReaderWriterStreamBenchmark;
-public static class Utf8JsonReaderStreamWriterBenchmark
+public static class Utf8JsonReaderWriterStreamBenchmark
 {
     public static async Task<int> Run()
     {

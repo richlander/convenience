@@ -9,7 +9,7 @@ List<Benchmark> benchmarks =
     new(nameof(JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark.Run()),
     new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async Task<int> () => await JsonDocumentBenchmark.JsonDocumentBenchmark.Run()),
     new(nameof(Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark), async Task<int> () => await Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark.Run()),
-    new(nameof(Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderStreamWriterBenchmark), async Task<int> () => await Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderStreamWriterBenchmark.Run()),
+    new(nameof(Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark), async Task<int> () => await Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark.Run()),
     new(nameof(Utf8JsonReaderWriterRawPipelineBenchmark.Utf8JsonReaderWriterRawPipelineBenchmark), async Task<int> () => await Utf8JsonReaderWriterRawPipelineBenchmark.Utf8JsonReaderWriterRawPipelineBenchmark.Run()),
     new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async Task<int> () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.Run()),
 ];
