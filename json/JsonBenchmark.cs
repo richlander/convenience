@@ -1,3 +1,5 @@
+namespace JsonConfig;
+
 public static class JsonBenchmark
 {
     public const string OfficialUrl = "https://raw.githubusercontent.com/dotnet/core/main/release-notes/7.0/releases.json";

@@ -1,6 +1,8 @@
+using JsonConfig;
 using Newtonsoft.Json;
 
 namespace NewtonsoftJsonSerializerBenchmark;
+
 public class NewtonsoftJsonSerializerBenchmark
 {
     public static async Task<int> Run()

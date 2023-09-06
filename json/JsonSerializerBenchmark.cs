@@ -3,8 +3,10 @@ using System.Text.Json;
 using ReportJson;
 using ReleaseJson;
 using Version = ReportJson.Version;
+using JsonConfig;
 
 namespace JsonSerializerBenchmark;
+
 public class JsonSerializerBenchmark
 {
     public static async Task<int> Run()

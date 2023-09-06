@@ -2,8 +2,10 @@ using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Text.Json;
+using JsonConfig;
 
 namespace Utf8JsonReaderWriterPipelineBenchmark;
+
 public static class Utf8JsonReaderWriterPipelineBenchmark
 {
     public static async Task<int> Run()

@@ -1,8 +1,10 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using JsonConfig;
 
 namespace JsonSerializerSourceGeneratorPocoBenchmark;
+
 public static class JsonSerializerSourceGeneratorPocoBenchmark
 {
     public static async Task<int> Run()

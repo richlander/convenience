@@ -23,7 +23,7 @@ if (args is {Length: >0} && args[0] is {Length: > 0})
 
 if (index is -1)
 {
-    index = 16;
+    index = 15;
 }
 
 if (index >= 10)

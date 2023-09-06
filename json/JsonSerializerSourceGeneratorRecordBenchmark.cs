@@ -1,11 +1,13 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using JsonConfig;
 using ReleaseJson;
 using ReportJson;
 using Version = ReportJson.Version;
 
 namespace JsonSerializerSourceGeneratorRecordBenchmark;
+
 public static class JsonSerializerSourceGeneratorRecordBenchmark
 {
     public static async Task<int> Run()
