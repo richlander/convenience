@@ -1,8 +1,6 @@
 using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
-using System.Drawing;
 using System.Text.Json;
-
 
 namespace Utf8JsonReaderWriterStreamBenchmark;
 public static class Utf8JsonReaderStreamWriterBenchmark

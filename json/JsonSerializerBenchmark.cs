@@ -3,7 +3,6 @@ using System.Text.Json;
 using ReportJson;
 using ReleaseJson;
 using Version = ReportJson.Version;
-using System.Runtime.InteropServices;
 
 namespace JsonSerializerBenchmark;
 public class JsonSerializerBenchmark

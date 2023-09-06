@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Text.Json;
