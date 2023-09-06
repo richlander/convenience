@@ -6,6 +6,7 @@ List<Benchmark> benchmarks =
 [
     new(nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), async Task<int> () => await JsonSerializerBenchmark.JsonSerializerBenchmark.Run()),
     new(nameof(JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorBenchmark.JsonSerializerSourceGeneratorBenchmark.Run()),
+    new(nameof(JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark.Run()),
     new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async Task<int> () => await JsonDocumentBenchmark.JsonDocumentBenchmark.Run()),
     new(nameof(Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark), async Task<int> () => await Utf8JsonReaderWriterBenchmark.Utf8JsonReaderWriterBenchmark.Run()),
     new(nameof(Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderStreamWriterBenchmark), async Task<int> () => await Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderStreamWriterBenchmark.Run()),

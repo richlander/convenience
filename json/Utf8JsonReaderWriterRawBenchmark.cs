@@ -4,7 +4,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Text.Json;
 
-
 namespace Utf8JsonReaderWriterRawBenchmark;
 public static class Utf8JsonReaderWriterRawBenchmark
 {

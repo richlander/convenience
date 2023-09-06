@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipelines;
 using System.Text.Json;
 
-
 namespace Utf8JsonReaderWriterBenchmark;
 public static class Utf8JsonReaderWriterBenchmark
 {
