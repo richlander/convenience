@@ -8,13 +8,13 @@ List<Benchmark> benchmarks =
     new(nameof(JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark.Run()),
     new(nameof(JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark.Run()),
     new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async Task<int> () => await JsonDocumentBenchmark.JsonDocumentBenchmark.Run()),
-    new(nameof(Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark), async Task<int> () => await Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark.Run()),
     new(nameof(Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark), async Task<int> () => await Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark.Run()),
-    new(nameof(Utf8JsonReaderWriterRawPipelineBenchmark.Utf8JsonReaderWriterRawPipelineBenchmark), async Task<int> () => await Utf8JsonReaderWriterRawPipelineBenchmark.Utf8JsonReaderWriterRawPipelineBenchmark.Run()),
+    new(nameof(Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark), async Task<int> () => await Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark.Run()),
+    new(nameof(Utf8JsonReaderWriterStreamRawBenchmark.Utf8JsonReaderWriterStreamRawBenchmark), async Task<int> () => await Utf8JsonReaderWriterStreamRawBenchmark.Utf8JsonReaderWriterStreamRawBenchmark.Run()),
     new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async Task<int> () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.Run()),
 ];
 
-int index = -1;
+int index = 5;
 
 if (args is {Length: >0} && args[0] is {Length: > 0})
 {
@@ -23,7 +23,7 @@ if (args is {Length: >0} && args[0] is {Length: > 0})
 
 if (index is -1)
 {
-    index = 15;
+    index = 16;
 }
 
 if (index >= 10)

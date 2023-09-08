@@ -1,8 +1,10 @@
-using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
-using System.IO.Pipelines;
 using System.Text.Json;
 using JsonConfig;
+using JsonReaders;
+using JsonExtensions;
+using System.IO.Pipelines;
+using System.Runtime.CompilerServices;
 
 namespace Utf8JsonReaderWriterPipelineBenchmark;
 
@@ -26,73 +28,57 @@ public static class Utf8JsonReaderWriterPipelineBenchmark
         var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         var stream = await releaseMessage.Content.ReadAsStreamAsync();
-        var releasesReader = await ReleasesJsonReader.FromStream(stream);
+
+        // option 1
+        // var reader = PipeReader.Create(stream, new StreamPipeReaderOptions(bufferSize: 16 * 1024));
+        // var result = await reader.ReadAsync();
+
+        // option 2
+        var pipe = new Pipe();
+        var reader = pipe.Reader;
+        _ = CopyToWriter(pipe, stream);
+        var result = await reader.ReadAsync();
+
+        var JsonPipeReader = new JsonPipeReader(reader, result);
+        var releasesReader = new ReleasesJsonReader(JsonPipeReader);
         var memory = new MemoryStream();
         var reportWriter = new ReportJsonWriter(releasesReader, memory);
         await reportWriter.Write();
         memory.Flush();
         memory.Position= 0;
         return memory;
+
+        static async Task CopyToWriter(Pipe pipe, Stream release)
+        {
+            await release.CopyToAsync(pipe.Writer);
+            pipe.Writer.Complete();
+        }
     }
 }
 
 public class ReportJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
 {
     private readonly Utf8JsonWriter _writer = new(memory);
-    private readonly ReleasesJsonReader _releasesReader = releasesReader;
+    private readonly ReleasesJsonReader _reader = releasesReader;
 
     public async Task Write()
     {
         _writer.WriteStartObject();
         _writer.WriteString("report-date"u8, DateTime.Now.ToShortDateString());
         _writer.WriteStartArray("versions"u8);
-
-        // Pre-read to node to validate that the buffer is large enough
-        // This pattern is used throughout
-        // The second (boolean) variable is used to indicate "pre-read"
-        // This pattern is wasteful in that it may pre-read multiple times
-        // Given this content, it makes sense.
-        // Advance() will be called once at most
-        // For other scenarios, retain the readerstate across buffer reads
-        while (!_releasesReader.ReadToProperty("releases"u8, false))
-        {
-            await _releasesReader.Advance();
-        }
         
-        var version = _releasesReader.GetVersion();
+        var version = await _reader.GetVersion();
         WriteVersionObject(version);
         _writer.WritePropertyName("releases"u8);
+        // Start releases
         _writer.WriteStartArray();
 
-        bool securityOnly = false;
-
-        await foreach (var release in _releasesReader.GetReleases())
+        await foreach (var release in _reader.GetReleases())
         {
-            if (!release.Security && securityOnly)
-            {
-                continue;
-            }
-
             WriteReleaseObject(release);
-
-            if (release.Security)
-            {
-                while (!_releasesReader.ReadToTokenType(JsonTokenType.EndArray, false))
-                {
-                    await _releasesReader.Advance();
-                }
-
-                WriteCveList();
-                break;
-            }
-            else
-            {
-                WriteEmptyCveList();
-                securityOnly = true;
-            }
         }
 
-        // End release
+        // End releases
         _writer.WriteEndArray();
 
         // End JSON document
@@ -128,26 +114,16 @@ public class ReportJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
         _writer.WriteStringValue(release.ReleaseDate);
         _writer.WritePropertyName("released-days-ago");
         _writer.WriteNumberValue(release.ReleasedDaysAgo);
-    }
 
-    public void WriteCveList()
-    {
+        // Write CVE list
         _writer.WritePropertyName("cve-list"u8);
         _writer.WriteStartArray();
 
-        foreach (var cve in _releasesReader.GetCves())
+        foreach (var cve in release.Cves)
         {
             WriteCve(cve);
         }
 
-        _writer.WriteEndArray();
-        _writer.WriteEndObject();
-    }
-
-    public void WriteEmptyCveList()
-    {
-        _writer.WritePropertyName("cve-list"u8);
-        _writer.WriteStartArray();
         _writer.WriteEndArray();
         _writer.WriteEndObject();
     }
@@ -163,11 +139,33 @@ public class ReportJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
     }
 }
 
-public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(pipe, result)
-{        
-    public Version GetVersion()
+public class ReleasesJsonReader(JsonPipeReader reader)
+{
+    private readonly JsonPipeReader _json = reader;
+    private ParseState _parseState = ParseState.None;
+
+    public async Task<Version> GetVersion()
     {
-        var reader = GetJsonReader();
+        ValidateParseState(ParseState.None);
+
+        // Pre-read to node to validate that the buffer is large enough
+        // This pattern is used throughout
+        // The second (boolean) variable is used to indicate "pre-read"
+        // This pattern is wasteful in that it may pre-read multiple times
+        // Given this content, it makes sense.
+        // Advance() will be called once at most
+        // For other scenarios, retain the readerstate across buffer reads
+        while (!_json.ReadToProperty("releases"u8, false))
+        {
+            await _json.Advance();
+        }
+
+        return GetVersionObject();
+    }
+
+    private Version GetVersionObject()
+    {
+        var reader = _json.GetReader();
         string? channel = null;
         string? support = null;
         string? eol = null;
@@ -199,18 +197,13 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
 
                 if (string.IsNullOrEmpty(channel) ||
                 string.IsNullOrEmpty(support))
-                {                }
-
-                int days = 0;
-                if (eol is null)
-                {
-                    eol = "";
-                }
-                else
-                {
-                    days = GetDaysAgo(eol, true);
+                {                
+                    throw new Exception(JsonBenchmark.BADJSON);
                 }
 
+
+                int days = eol is null ? 0 : GetDaysAgo(eol, true);
+                eol ??= "";
                 bool supported = support is "active" or "maintenance";
 
                 if (channel is null)
@@ -218,7 +211,8 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
                     throw new Exception(JsonBenchmark.BADJSON);
                 }
 
-                UpdateState(reader);
+                _json.UpdateState(reader);
+                _parseState = ParseState.Releases;
                 return new Version(channel, supported, eol, days);
             }
         }
@@ -228,64 +222,101 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
 
     public async IAsyncEnumerable<Release> GetReleases()
     {
-        int index = -1;
-        while (true)
+        if (!ValidateParseState(ParseState.Releases))
         {
-            index++;
-
-            if (index > 0)
+            while (!_json.ReadToProperty("releases"u8))
             {
-                while (!ReadToTokenType(JsonTokenType.EndArray))
-                {
-                    await Advance();
-                }
+                await _json.Advance();
+            }
+        }
 
-                // Read until end of release object
-                var depth = Depth -1;
+        _parseState = ParseState.Release;
 
-                while (!ReadToDepth(depth))
-                {
-                    await Advance();
-                }
+        // Write release objects
+        var securityOnly = false;
+        var isSecurity = false;
+
+        // Assumption is that cursor is at `ObjectStart` node
+        // at start of each pass
+        while (!isSecurity)
+        {
+            while (!_json.ReadToPropertyValue<bool>("security"u8, out isSecurity, false))
+            {
+                await _json.Advance();
             }
 
-            if (!IsFinalBlock)
+            if (securityOnly && !isSecurity)
             {
-                await Advance();
+                await ReadToReleaseEndObject();
+                continue;
             }
-
-            while (!ReadToProperty("cve-list"u8, false))
+            else if (!securityOnly)
             {
-                await Advance();
+                securityOnly = true;
             }
 
             var release = GetRelease();
 
+
             if (release is null)
             {
-                yield break;
+                break;
             }
-            else if (!release.Security && index > 0)
+            else if (release.Security)
             {
-                continue;
+                await foreach(var cve in GetCves())
+                {
+                    release.Cves.Add(cve);
+                }
             }
 
             yield return release;
+
+            if (release.Security)
+            {
+                break;
+            }
+            else if (!await ReadToReleaseEndObject())
+            {
+                break;
+            }
+        }
+
+        _parseState = ParseState.Done;
+        yield break;
+
+        async Task<bool> ReadToReleaseEndObject()
+        {
+            // Read to end of `cve-list` array
+            while (!_json.ReadToTokenType(JsonTokenType.EndArray))
+            {
+                await _json.Advance();
+            }
+
+            // Read until end of release object
+            var depth = _json.Depth -1;
+
+            while (!_json.ReadToDepth(depth))
+            {
+                await _json.Advance();
+            }
+
+            return true;
         }
     }
 
-    public Release? GetRelease()
+    private Release? GetRelease()
     {
         string? releaseDate = null;
         string? releaseVersion = null;
 
-        var reader = GetJsonReader();
+        var reader = _json.GetReader();
     
         while (reader.Read())
         {
             if (reader.TokenType is JsonTokenType.EndArray)
             {
-                UpdateState(reader);
+                _json.UpdateState(reader);
                 return null;
             }
             else if (!reader.IsProperty())
@@ -316,7 +347,7 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
                 var releaseDaysAgo = GetDaysAgo(releaseDate, true);
                 var release = new Release(releaseVersion, isSecurity, releaseDate, releaseDaysAgo);
 
-                UpdateState(reader);
+                _json.UpdateState(reader);
                 return release;
             }
         }
@@ -329,8 +360,13 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
         throw new Exception(JsonBenchmark.BADJSONREAD);
     }
 
-    public IEnumerable<Cve> GetCves()
+    private async IAsyncEnumerable<Cve> GetCves()
     {
+        while (!_json.ReadToTokenType(JsonTokenType.EndArray, false))
+        {
+            await _json.Advance();
+        }
+
         while(GetCve(out Cve? cve))
         {
             yield return cve;
@@ -339,12 +375,12 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
         yield break;
     }
 
-    public bool GetCve([NotNullWhen(returnValue:true)] out Cve? cve)
+    private bool GetCve([NotNullWhen(returnValue:true)] out Cve? cve)
     {
         string? cveId = null;
         cve = null;
 
-        var reader = GetJsonReader();
+        var reader = _json.GetReader();
 
         while (true)
         {
@@ -376,12 +412,19 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
 
                 cve = new Cve(cveId, cveUrl);
                 reader.Read();
-                UpdateState(reader);
+                _json.UpdateState(reader);
                 return true;
             }
 
         }
     }
+
+    private bool ValidateParseState(ParseState expected) => expected switch
+    {
+        ParseState e when e == _parseState => true,
+        ParseState e when e > _parseState => false,
+        _ => throw new Exception(JsonBenchmark.JSONOUTOFORDER)
+    };
 
     private static int GetDaysAgo(string date, bool positiveNumber = false)
     {
@@ -389,157 +432,21 @@ public class ReleasesJsonReader(Pipe pipe, ReadResult result) : JsonPipeReader(p
         var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
         return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
     }
-    public static async Task<ReleasesJsonReader> FromStream(Stream stream)
-    {
-        var (pipe, result) = await JsonPipeReader.ReadStream(stream);
-        return new ReleasesJsonReader(pipe, result);
-    }
 }
 
-public class JsonPipeReader(Pipe pipe, ReadResult result)
+enum ParseState
 {
-    private JsonReaderState _readerState = default;
-    private SequencePosition _position = default;
-    private int _depth = 0;
-    private long _bytesConsumed = 0;
-    private Pipe _pipe = pipe;
-    private ReadOnlySequence<byte> _text = result.Buffer;
-    private bool _isFinalBlock = result.IsCompleted;
-
-    public void UpdateState(Utf8JsonReader reader)
-    {
-        _bytesConsumed = reader.BytesConsumed;
-        _position = reader.Position;
-        _readerState = reader.CurrentState;
-        _depth = reader.CurrentDepth;
-    }
-
-    public Utf8JsonReader GetJsonReader()
-    {
-        var slice = _bytesConsumed > 0 ? _text.Slice(_position) : _text;
-        var reader = new Utf8JsonReader(slice, _isFinalBlock, _readerState);
-        return reader;
-    }
-
-    public int Depth => _depth;
-
-    public bool IsFinalBlock => _isFinalBlock;
-
-    public long BytesConsumed => _bytesConsumed;
-
-    public ReadOnlySequence<byte> Text => _text;
-
-    public async Task Advance()
-    {
-        _pipe.Reader.AdvanceTo(_position);
-        ReadResult result = await ReadPipe();
-        _isFinalBlock = result.IsCompleted;
-        _text = result.Buffer;
-        _bytesConsumed = 0;
-    }
-
-    private async Task<ReadResult> ReadPipe()
-    {
-        var result = await _pipe.Reader.ReadAsync();
-        return result;
-    }
-
-    public bool ReadToDepth(int depth, bool updateState = true)
-    {
-        var reader = GetJsonReader();
-        var found = false;
-
-        while (reader.Read())
-        {
-            if (reader.CurrentDepth <= depth)
-            {
-                found = true;
-                break;
-            }
-        }
-
-        if (updateState)
-        {
-            UpdateState(reader);
-        }
-
-        return found;
-    }
-
-    public bool ReadToTokenType(JsonTokenType tokenType, bool updateState = true)
-    {
-        var reader = GetJsonReader();
-        var found = false;
-
-        while (reader.Read())
-        {
-            if (reader.TokenType == tokenType)
-            {
-                found = true;
-                break;
-            }
-        }
-
-        if (updateState)
-        {
-            UpdateState(reader);
-        }
-
-        return found;
-    }
-
-    public bool ReadToProperty(ReadOnlySpan<byte> name, bool updateState = true)
-    {
-        var reader = GetJsonReader();
-        var found = false;
-
-        while (reader.Read())
-        {
-            if (reader.TokenType is JsonTokenType.PropertyName &&
-                reader.ValueTextEquals(name))
-            {
-                found = true;
-                break;
-            }
-        }
-
-        if (updateState)
-        {
-            UpdateState(reader);
-        }
-
-        return found;
-    }
-
-    public static async Task<(Pipe pipe, ReadResult result)> ReadStream(Stream stream)
-    {
-        var pipe = new Pipe();
-        _ = CopyToWriter(pipe, stream);
-        var result = await pipe.Reader.ReadAsync();
-        return (pipe, result);
-    }
-
-    private static async Task CopyToWriter(Pipe pipe, Stream release)
-    {
-        await release.CopyToAsync(pipe.Writer);
-        pipe.Writer.Complete();
-    }
-}
-
-public static class JsonExtensions
-{
-    public static bool IsProperty(this Utf8JsonReader reader) =>
-        reader.TokenType is JsonTokenType.PropertyName;
-
-    public static void WriteProperty(this Utf8JsonWriter writer, ReadOnlySpan<byte> name, string value)
-    {
-        writer.WritePropertyName(name);
-        writer.WriteStringValue(value);
-    }
+    None,
+    Releases,
+    Release,
+    Done
 }
 
 public record Version(string MajorVersion, bool Supported, string EolDate, int SupportEndsInDays);
 
-public record Release(string BuildVersion, bool Security, string ReleaseDate, int ReleasedDaysAgo);
+public record Release(string BuildVersion, bool Security, string ReleaseDate, int ReleasedDaysAgo)
+{
+    public IList<Cve> Cves { get; init; } = [];
+};
 
 public record Cve(string CveId, string CveUrl);
