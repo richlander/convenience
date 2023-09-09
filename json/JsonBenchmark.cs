@@ -2,12 +2,14 @@ namespace JsonConfig;
 
 public static class JsonBenchmark
 {
-    public const string OfficialUrl = "https://raw.githubusercontent.com/dotnet/core/main/release-notes/7.0/releases.json";
-    public const string FakeUrl = "https://gist.githubusercontent.com/richlander/f00f5ce27c26acf9c6e0988219a8dbed/raw/7829be33cc6dd1b9fa9a8e5813a24241d43ae573/release.json";
-    public const string FakeUrlSmall = "https://gist.githubusercontent.com/richlander/7945b779c6ccc13af791bb824c096a5a/raw/e9108b0edb281df39fa853b78b0c6e2d2a22b835/releases.json";
+    public const string OfficialUrl = "https://raw.githubusercontent.com/dotnet/core/main/release-notes/6.0/releases.json";
+    public const string FakeUrl = "https://gist.githubusercontent.com/richlander/408cd63769ab12386729e926f25d8858/raw/064d23ace456176f67784ed80aa5ce2d5b15f333/releases.json";
+    public const string FakeUrlOneReleaseOnly = "https://gist.githubusercontent.com/richlander/f965ba65696efb6187c727c0e3e9f7dc/raw/277eee6c6b545e6cc66a50061f5f2ad2170ae69c/releases.json";
+    public const string FakeUrlExtraDataRemoved = "https://gist.githubusercontent.com/richlander/ce8e5fd8c29a8722f6cb9d3d3bb7fb55/raw/2dc0d16a6272851c59ba3db6e23779b6518b22a1/releases.json";
+    public const string FakeUrlNoSecurity = "https://gist.githubusercontent.com/richlander/e7f1d03e0cea76539325dcc07a8f48df/raw/e05494f2c7e10715dfcd0cdcc2dc1fbd7cb89219/releases.json";
     public const string BADJSON = "JSON data is wrong";
     public const string BADJSONREAD = "Cannot read JSON data.";
     public const string JSONOUTOFORDER = "JSON is bring read out of order";
 
-    public static string Url => FakeUrl;
+    public static string Url => OfficialUrl;
 }

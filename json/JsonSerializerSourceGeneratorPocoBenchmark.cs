@@ -48,7 +48,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
                 throw new Exception(JsonBenchmark.BADJSON);
             }
             
-            var reportRelease = Release.Get(releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.Cves);
+            var reportRelease = Release.Get(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
             yield return reportRelease;
 
             if (releaseDetail.Security)
@@ -204,7 +204,7 @@ public class Release
     [property: JsonPropertyName("cve-list")]
     public IList<Cve>? Cves { get; set; }
 
-    public static Release Get(string buildVersion, bool security, string releaseDate, int releasedDaysAgo, IList<Cve> cves) => 
+    public static Release Get(string releaseDate, int releasedDaysAgo, string buildVersion, bool security, IList<Cve> cves) => 
         new()
         {
             BuildVersion = buildVersion,

@@ -216,14 +216,20 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
 
         _parseState = ParseState.Release;
 
-        // Write release objects
         var securityOnly = false;
-        var isSecurity = false;
 
+        while (!_json.ReadToTokenType(JsonTokenType.StartObject))
+        {
+            await _json.Advance();
+        }
+
+        // Write release objects
         // Assumption is that cursor is at `ObjectStart` node
         // at start of each pass
-        while (!isSecurity)
+        while (true)
         {
+            var isSecurity = false;
+
             while (!_json.ReadToPropertyValue<bool>("security"u8, out isSecurity, false))
             {
                 await _json.Advance();
@@ -231,7 +237,11 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
 
             if (securityOnly && !isSecurity)
             {
-                await ReadToReleaseEndObject();
+                if (!await ReadToReleaseStartObject())
+                {
+                    break;
+                }
+
                 continue;
             }
             else if (!securityOnly)
@@ -241,12 +251,7 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
 
             var release = GetRelease();
 
-
-            if (release is null)
-            {
-                break;
-            }
-            else if (release.Security)
+            if (release.Security)
             {
                 await foreach(var cve in GetCves())
                 {
@@ -260,7 +265,7 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
             {
                 break;
             }
-            else if (!await ReadToReleaseEndObject())
+            else if (!await ReadToReleaseStartObject())
             {
                 break;
             }
@@ -269,10 +274,11 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
         _parseState = ParseState.Done;
         yield break;
 
-        async Task<bool> ReadToReleaseEndObject()
+        async Task<bool> ReadToReleaseStartObject()
         {
-            // Read to end of `cve-list` array
-            while (!_json.ReadToTokenType(JsonTokenType.EndArray))
+
+            // Read to next property to ensure depth is at property not a value
+            while (!_json.ReadToTokenType(JsonTokenType.PropertyName))
             {
                 await _json.Advance();
             }
@@ -285,11 +291,25 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
                 await _json.Advance();
             }
 
-            return true;
+            JsonTokenType tokenType;
+
+            while (!_json.ReadNext(out tokenType))
+            {
+                await _json.Advance();
+            }
+
+            if (tokenType is JsonTokenType.StartObject)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 
-    private Release? GetRelease()
+    private Release GetRelease()
     {
         string? releaseDate = null;
         string? releaseVersion = null;
@@ -298,12 +318,7 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
     
         while (reader.Read())
         {
-            if (reader.TokenType is JsonTokenType.EndArray)
-            {
-                _json.UpdateState(reader);
-                return null;
-            }
-            else if (!reader.IsProperty())
+            if (!reader.IsProperty())
             {
                 continue;
             }
@@ -329,16 +344,11 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
                     }
 
                 var releaseDaysAgo = GetDaysAgo(releaseDate, true);
-                var release = new Release(releaseVersion, isSecurity, releaseDate, releaseDaysAgo);
+                var release = new Release(releaseDate, releaseDaysAgo, releaseVersion, isSecurity);
 
                 _json.UpdateState(reader);
                 return release;
             }
-        }
-
-        if (reader.IsFinalBlock)
-        {
-            return null;
         }
 
         throw new Exception(JsonBenchmark.BADJSONREAD);
@@ -434,7 +444,7 @@ enum ParseState
 
 public record Version(string MajorVersion, bool Supported, string EolDate, int SupportEndsInDays);
 
-public record Release(string BuildVersion, bool Security, string ReleaseDate, int ReleasedDaysAgo)
+public record Release(string ReleaseDate, int ReleasedDaysAgo, string BuildVersion, bool Security)
 {
     public IList<Cve> Cves { get; init; } = [];
 };

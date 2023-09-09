@@ -48,7 +48,7 @@ public class NewtonsoftJsonSerializerBenchmark
                 continue;
             }
             
-            var reportRelease = new Release(releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.Cves);
+            var reportRelease = new Release(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
             yield return reportRelease;
 
             if (releaseDetail.Security)
@@ -84,4 +84,4 @@ public record Report([property: JsonProperty("report-date")] string ReportDate, 
 
 public record Version([property: JsonProperty("version")] string MajorVersion, [property: JsonProperty("supported")] bool Supported, [property: JsonProperty("eol-date")] string EolDate, [property: JsonProperty("support-ends-in-days")] int SupportEndsInDays, [property: JsonProperty("releases")] IList<Release> Releases);
 
-public record Release([property: JsonProperty("release-version")] string BuildVersion, [property: JsonProperty("security")] bool Security, [property: JsonProperty("release-date")] string ReleaseDate, [property: JsonProperty("released-days-ago")] int ReleasedDaysAgo, [property: JsonProperty("cve-list")] IList<Cve> Cves);
+public record Release([property: JsonProperty("release-date")] string ReleaseDate, [property: JsonProperty("released-days-ago")] int ReleasedDaysAgo, [property: JsonProperty("release-version")] string BuildVersion, [property: JsonProperty("security")] bool Security, [property: JsonProperty("cve-list")] IList<Cve> Cves);

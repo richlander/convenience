@@ -23,7 +23,8 @@ public class JsonSerializerBenchmark
         var release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.Url) ?? throw new Exception(JsonBenchmark.BADJSON);
         int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
         bool supported = release.SupportPhase is "active" or "maintainence";
-        Version version = new(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleasesForReport(release).ToList());        Report report = new(DateTime.Today.ToShortDateString(), [version]);
+        Version version = new(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleasesForReport(release).ToList());
+        Report report = new(DateTime.Today.ToShortDateString(), [version]);
         return JsonSerializer.Serialize(report);
     }
 
@@ -39,7 +40,7 @@ public class JsonSerializerBenchmark
                 continue;
             }
             
-            yield return new Release(releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.Cves);
+            yield return new Release(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
 
             if (releaseDetail.Security)
             {

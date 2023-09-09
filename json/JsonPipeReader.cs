@@ -14,7 +14,6 @@ public class JsonPipeReader(PipeReader reader, ReadResult result)
     private long _bytesConsumed = 0;
     private readonly PipeReader _pipeReader = reader;
     private ReadOnlySequence<byte> _text = result.Buffer;
-    private bool _isFinalBlock = result.IsCompleted;
 
     public void UpdateState(Utf8JsonReader reader)
     {
@@ -27,13 +26,11 @@ public class JsonPipeReader(PipeReader reader, ReadResult result)
     public Utf8JsonReader GetReader()
     {
         var slice = _bytesConsumed > 0 ? _text.Slice(_position) : _text;
-        var reader = new Utf8JsonReader(slice, _isFinalBlock, _readerState);
+        var reader = new Utf8JsonReader(slice, false, _readerState);
         return reader;
     }
 
     public int Depth => _depth;
-
-    public bool IsFinalBlock => _isFinalBlock;
 
     public long BytesConsumed => _bytesConsumed;
 
@@ -43,14 +40,8 @@ public class JsonPipeReader(PipeReader reader, ReadResult result)
     {
         _pipeReader.AdvanceTo(_position);
         var result = await _pipeReader.ReadAsync();
-        _isFinalBlock = result.IsCompleted;
         _text = result.Buffer;
         _bytesConsumed = 0;
-
-        if (_text.IsEmpty)
-        {
-            throw new Exception(JsonBenchmark.BADJSONREAD);
-        }
     }
 
     public bool ReadToDepth(int depth, bool updateState = true)
@@ -73,6 +64,20 @@ public class JsonPipeReader(PipeReader reader, ReadResult result)
         }
 
         return found;
+    }
+
+    public bool ReadNext([NotNullWhen(true)] out JsonTokenType tokenType)
+    {
+        var reader = GetReader();
+
+        if (reader.Read())
+        {
+            tokenType = reader.TokenType;
+            return true;
+        }
+
+        tokenType = default;
+        return false;
     }
 
     public bool ReadToTokenType(JsonTokenType tokenType, bool updateState = true)

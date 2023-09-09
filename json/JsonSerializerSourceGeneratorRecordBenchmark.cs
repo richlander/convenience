@@ -41,7 +41,7 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
                 continue;
             }
             
-            var reportRelease = new Release(releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.Cves);
+            var reportRelease = new Release(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
             yield return reportRelease;
 
             if (releaseDetail.Security)

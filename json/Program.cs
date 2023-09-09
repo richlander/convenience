@@ -28,10 +28,10 @@ if (index is -1)
 
 if (index >= 10)
 {
-    int iterations = index;
+    int iterations = index is 100 ? 1 : index;
     List<BenchmarkResult> benchmarkResults = [];
 
-    for (int i = 0; i < iterations; i ++)
+    for (int i = 0; i < iterations; i++)
     {
         Console.WriteLine("***");
         Console.WriteLine($"*** Pass {i} ****************");

@@ -22,7 +22,7 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
     public Utf8JsonReader GetReader()
     {
         ReadOnlySpan<byte> slice = _bytesConsumed > 0 || _readCount < Size ? _buffer.AsSpan()[(int)_bytesConsumed.._readCount] : _buffer;
-        var reader = new Utf8JsonReader(slice, isFinalBlock : IsFinalBlock, state: _readerState);
+        var reader = new Utf8JsonReader(slice, false, _readerState);
         return reader;
     }
 
@@ -32,8 +32,6 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
 
     public static int Size => 4 * 1024;
 
-    public bool IsFinalBlock => false;
-
     public async Task Advance()
     {
         // Save off existing text
@@ -41,7 +39,7 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
 
         // Read from stream to fill remainder of buffer
         int read = await _stream.ReadAsync(_buffer.AsMemory()[leftoverLength..]);
-        if (read == -1)
+        if (read <= 0)
         {
             
         }
@@ -77,6 +75,20 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
         }
 
         return found;
+    }
+
+    public bool ReadNext([NotNullWhen(true)] out JsonTokenType tokenType)
+    {
+        var reader = GetReader();
+
+        if (reader.Read())
+        {
+            tokenType = reader.TokenType;
+            return true;
+        }
+
+        tokenType = default;
+        return false;
     }
 
     public bool ReadToTokenType(JsonTokenType tokenType, bool updateState = true)
@@ -117,11 +129,11 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
     // This app only relies on T == bool
     // A different app may rely on multiple types of T
     // This more complicated version was written to demonstrate the pattern
-    public bool ReadToPropertyValue<T>(ReadOnlySpan<byte> name, [NotNullWhen(true)] out T? value, bool updateState = true)
+    public bool ReadToPropertyValue<T>(ReadOnlySpan<byte> name, [NotNullWhen(true)] out T value, bool updateState = true)
     {
         var reader = GetReader();
         var found = ReadToProperty(ref reader, name);
-        value = default;
+        value = default!;
 
         if (found && reader.Read())
         {

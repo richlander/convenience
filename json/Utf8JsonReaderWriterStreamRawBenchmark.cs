@@ -69,12 +69,18 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
         _writer.WritePropertyName("releases"u8);
         _writer.WriteStartArray();
 
-        // Write release objects
         var securityOnly = false;
-        var isSecurity = false;
 
-        while (!isSecurity)
+        while (!ReadToTokenType(JsonTokenType.StartObject))
         {
+            await Advance();
+        }
+
+        // Write release objects
+        while (true)
+        {
+            var isSecurity = false;
+
             while(!ReadToPropertyValue<bool>("security"u8, out isSecurity, false))
             {
                 await Advance();
@@ -82,7 +88,11 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
 
             if (!isSecurity && securityOnly)
             {
-                await ReadToReleaseEndObject();
+                if (!await ReadToReleaseStartObject())
+                {
+                    break;
+                }
+
                 continue;
             }
 
@@ -94,7 +104,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
                 WriteCveEmpty();
                 _writer.WriteEndObject();
                 securityOnly = true;
-                await ReadToReleaseEndObject();
+                await ReadToReleaseStartObject();
                 continue;
             }
 
@@ -105,23 +115,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
 
             WriteCveList();
             _writer.WriteEndObject();
-
-            async Task ReadToReleaseEndObject()
-            {
-                // Read to end of `cve-list` array
-                while (!ReadToTokenType(JsonTokenType.EndArray))
-                {
-                    await Advance();
-                }
-
-                // Read until end of release object
-                var depth = Depth -1;
-
-                while (!ReadToDepth(depth))
-                {
-                    await Advance();
-                }
-            }
+            break;
         }
 
         // End release
@@ -134,6 +128,40 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
 
         // Write content
         _writer.Flush();
+
+        async Task<bool> ReadToReleaseStartObject()
+        {
+
+            // Read to next property to ensure depth is at property not a value
+            while (!ReadToTokenType(JsonTokenType.PropertyName))
+            {
+                await Advance();
+            }
+
+            // Read until end of release object
+            var depth = Depth -1;
+
+            while (!ReadToDepth(depth))
+            {
+                await Advance();
+            }
+
+            JsonTokenType tokenType;
+
+            while (!ReadNext(out tokenType))
+            {
+                await Advance();
+            }
+
+            if (tokenType is JsonTokenType.StartObject)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
     }
 
     public void WriteVersion()
