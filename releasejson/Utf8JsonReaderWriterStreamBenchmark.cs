@@ -29,8 +29,11 @@ public static class Utf8JsonReaderWriterStreamBenchmark
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         releaseMessage.EnsureSuccessStatusCode();
         var jsonStream = await releaseMessage.Content.ReadAsStreamAsync();
+
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(JsonStreamReader.Size);
-        var releasesReader = await ReleasesJsonReader.FromStream(jsonStream, rentedArray);
+        int read = await jsonStream.ReadAsync(rentedArray);
+
+        var releasesReader = new ReleasesJsonReader(new(jsonStream, rentedArray, read));
         var memory = new MemoryStream();
         var reportWriter = new ReportJsonWriter(releasesReader, memory);
         await reportWriter.Write();
@@ -123,9 +126,9 @@ public class ReportJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
     }
 }
 
-public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
+public class ReleasesJsonReader(JsonStreamReader reader)
 {
-    private readonly JsonStreamReader _json = new(stream, buffer, count);
+    private readonly JsonStreamReader _json = reader;
     private ParseState _parseState = ParseState.None;
 
     public async Task<Version> GetVersion()
@@ -425,12 +428,6 @@ public class ReleasesJsonReader(Stream stream, byte[] buffer, int count)
         bool success = DateTime.TryParse(date, out var day);
         var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
         return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
-    }
-
-    public static async Task<ReleasesJsonReader> FromStream(Stream stream, byte[] buffer)
-    {
-        int read = await stream.ReadAsync(buffer);
-        return new ReleasesJsonReader(stream, buffer, read);
     }
 }
 

@@ -29,18 +29,12 @@ public static class Utf8JsonReaderWriterPipelineBenchmark
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         var stream = await releaseMessage.Content.ReadAsStreamAsync();
 
-        // option 1
-        // var reader = PipeReader.Create(stream, new StreamPipeReaderOptions(bufferSize: 16 * 1024));
-        // var result = await reader.ReadAsync();
-
-        // option 2
         var pipe = new Pipe();
         var reader = pipe.Reader;
         _ = CopyToWriter(pipe, stream);
         var result = await reader.ReadAsync();
 
-        var JsonPipeReader = new JsonPipeReader(reader, result);
-        var releasesReader = new ReleasesJsonReader(JsonPipeReader);
+        var releasesReader = new ReleasesJsonReader(new(reader, result));
         var memory = new MemoryStream();
         var reportWriter = new ReportJsonWriter(releasesReader, memory);
         await reportWriter.Write();

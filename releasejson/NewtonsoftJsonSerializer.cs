@@ -22,16 +22,10 @@ public class NewtonsoftJsonSerializerBenchmark
         JsonSerializer serializer = new();
         using StreamReader sr = new(stream);
         using JsonReader reader = new JsonTextReader(sr);
-        MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception();
-        
-        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        Version version = new(release.ChannelVersion, release.SupportPhase is "active" or "maintainence", release.EolDate ?? "Unknown", supportDays, []);
 
-        foreach(var reportRelease in GetReleasesForReport(release))
-        {
-            version.Releases.Add(reportRelease);
-        }
-        
+        MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception();
+        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
+        Version version = new(release.ChannelVersion, release.SupportPhase is "active" or "maintainence", release.EolDate ?? "Unknown", supportDays, GetReleasesForReport(release).ToList());
         Report report = new(DateTime.Today.ToShortDateString(), [version]);
         return JsonConvert.SerializeObject(report);
     }
@@ -48,8 +42,7 @@ public class NewtonsoftJsonSerializerBenchmark
                 continue;
             }
             
-            var reportRelease = new Release(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
-            yield return reportRelease;
+            yield return new Release(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
 
             if (releaseDetail.Security)
             {
