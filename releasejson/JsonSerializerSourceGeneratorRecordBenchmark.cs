@@ -10,33 +10,38 @@ namespace JsonSerializerSourceGeneratorRecordBenchmark;
 
 public static class JsonSerializerSourceGeneratorRecordBenchmark
 {
-    public static async Task<int> Run()
+    public static async Task<int> RunAsync()
     {
-        var json = await MakeReport();
+        var json = await MakeReportAsync();
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
     }
 
-    public static async Task<string> MakeReport()
+    public static async Task<string> MakeReportAsync()
     {
         HttpClient httpClient= new();
         var release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.Url, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
-        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        bool supported = release.SupportPhase is "active" or "maintainence";
-        Version version = new(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleasesForReport(release).ToList());
-        Report report = new(DateTime.Today.ToShortDateString(), [version]);
+        Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         return JsonSerializer.Serialize(report, ReportRecordContext.Default.Report);
     }
 
+    public static Version GetVersion(MajorRelease release)
+    {
+        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
+        bool supported = release.SupportPhase is "active" or "maintainence";
+        Version version = new(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleases(release).ToList());
+        return version;
+    }
+
     // Get first and first security release
-    public static IEnumerable<Release> GetReleasesForReport(MajorRelease release)
+    public static IEnumerable<Release> GetReleases(MajorRelease release)
     {
         bool securityOnly = false;
         
         foreach (ReleaseDetail releaseDetail in release.Releases)
         {
-            if (!releaseDetail.Security && securityOnly)
+            if (securityOnly && !releaseDetail.Security)
             {
                 continue;
             }

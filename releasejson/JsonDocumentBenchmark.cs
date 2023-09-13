@@ -7,15 +7,15 @@ namespace JsonDocumentBenchmark;
 public static class JsonDocumentBenchmark
 {
 
-    public static async Task<int> Run()
+    public static async Task<int> RunAsync()
     {
-        var json = await MakeReport();
+        var json = await MakeReportAsync();
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
     }
 
-    public static async Task<string> MakeReport()
+    public static async Task<string> MakeReportAsync()
     {
         // Make network call
         var httpClient = new HttpClient();

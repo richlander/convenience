@@ -9,9 +9,9 @@ namespace Utf8JsonReaderWriterStreamRawBenchmark;
 
 public static class Utf8JsonReaderWriterStreamRawBenchmark
 {
-    public static async Task<int> Run()
+    public static async Task<int> RunAsync()
     {
-        var stream = await MakeReport();
+        var stream = await MakeReportAsync();
 
         for (int i = 0; i < stream.Length; i++)
         {
@@ -22,7 +22,7 @@ public static class Utf8JsonReaderWriterStreamRawBenchmark
         return (int)stream.Length;
     }
 
-    public static async Task<Stream> MakeReport()
+    public static async Task<Stream> MakeReportAsync()
     {
         var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
@@ -58,7 +58,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
         // For other scenarios, retain the readerstate across buffer reads
         while (!ReadToProperty("releases"u8, false))
         {
-            await Advance();
+            await AdvanceAsync();
         }
         
         // Write version object
@@ -73,7 +73,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
 
         while (!ReadToTokenType(JsonTokenType.StartObject))
         {
-            await Advance();
+            await AdvanceAsync();
         }
 
         // Write release objects
@@ -83,7 +83,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
 
             while(!ReadToPropertyValue<bool>("security"u8, out isSecurity, false))
             {
-                await Advance();
+                await AdvanceAsync();
             }
 
             if (!isSecurity && securityOnly)
@@ -110,7 +110,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
 
             while (!ReadToTokenType(JsonTokenType.EndArray, false))
             {
-                await Advance();
+                await AdvanceAsync();
             }
 
             WriteCveList();
@@ -135,7 +135,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
             // Read to next property to ensure depth is at property not a value
             while (!ReadToTokenType(JsonTokenType.PropertyName))
             {
-                await Advance();
+                await AdvanceAsync();
             }
 
             // Read until end of release object
@@ -143,14 +143,14 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
 
             while (!ReadToDepth(depth))
             {
-                await Advance();
+                await AdvanceAsync();
             }
 
             JsonTokenType tokenType;
 
             while (!ReadNext(out tokenType))
             {
-                await Advance();
+                await AdvanceAsync();
             }
 
             if (tokenType is JsonTokenType.StartObject)

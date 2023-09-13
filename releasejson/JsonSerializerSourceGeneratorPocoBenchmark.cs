@@ -7,28 +7,32 @@ namespace JsonSerializerSourceGeneratorPocoBenchmark;
 
 public static class JsonSerializerSourceGeneratorPocoBenchmark
 {
-    public static async Task<int> Run()
+    public static async Task<int> RunAsync()
     {
-        var json = await MakeReport();
+        var json = await MakeReportAsync();
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
     }
 
-    public static async Task<string> MakeReport()
+    public static async Task<string> MakeReportAsync()
     {
         HttpClient httpClient= new();
-        var release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.Url, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
-        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        bool supported = release.SupportPhase is "active" or "maintainence";
-        ArgumentNullException.ThrowIfNull(release.ChannelVersion);
-        Version version = Version.Get(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleasesForReport(release).ToList());
-        Report report = Report.Get(DateTime.Today.ToShortDateString(), [version]);
+        MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.Url, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
+        Report report = Report.Get(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         return JsonSerializer.Serialize(report, ReportContext.Default.Report);
     }
 
+    public static Version GetVersion(MajorRelease release)
+    {
+        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
+        bool supported = release.SupportPhase is "active" or "maintainence";
+        Version version = Version.Get(release.ChannelVersion ?? "", supported, release.EolDate ?? "Unknown", supportDays, GetReleases(release).ToList());
+        return version;
+    }
+
     // Get first and first security release
-    public static IEnumerable<Release> GetReleasesForReport(MajorRelease release)
+    public static IEnumerable<Release> GetReleases(MajorRelease release)
     {
         bool securityOnly = false;
         
@@ -36,7 +40,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
 
         foreach (ReleaseDetail releaseDetail in release.Releases)
         {
-            if (!releaseDetail.Security && securityOnly)
+            if (securityOnly && !releaseDetail.Security)
             {
                 continue;
             }
@@ -87,7 +91,6 @@ public class MajorRelease
     [property: JsonPropertyName("channel-version")]
     public string? ChannelVersion { get; set; }
 
-    
     [property: JsonPropertyName("latest-release")]
     public string? LatestRelease { get; set; }
 

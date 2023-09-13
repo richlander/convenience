@@ -5,15 +5,15 @@ namespace NewtonsoftJsonSerializerBenchmark;
 
 public class NewtonsoftJsonSerializerBenchmark
 {
-    public static async Task<int> Run()
+    public static async Task<int> RunAsync()
     {
-        var json = await MakeReport();
+        var json = await MakeReportAsync();
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
     }
 
-    public static async Task<string> MakeReport()
+    public static async Task<string> MakeReportAsync()
     {
         var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
@@ -24,14 +24,20 @@ public class NewtonsoftJsonSerializerBenchmark
         using JsonReader reader = new JsonTextReader(sr);
 
         MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception();
-        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        Version version = new(release.ChannelVersion, release.SupportPhase is "active" or "maintainence", release.EolDate ?? "Unknown", supportDays, GetReleasesForReport(release).ToList());
-        Report report = new(DateTime.Today.ToShortDateString(), [version]);
+        Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         return JsonConvert.SerializeObject(report);
     }
 
+    public static Version GetVersion(MajorRelease release)
+    {
+        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
+        bool supported = release.SupportPhase is "active" or "maintainence";
+        Version version = new(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleases(release).ToList());
+        return version;
+    }
+
   // Get first and first security release
-    public static IEnumerable<Release> GetReleasesForReport(MajorRelease release)
+    public static IEnumerable<Release> GetReleases(MajorRelease release)
     {
         bool securityOnly = false;
         
@@ -66,15 +72,50 @@ public class NewtonsoftJsonSerializerBenchmark
 }
 
 // releases.json
-public record MajorRelease([property: JsonProperty("channel-version")] string ChannelVersion, [property: JsonProperty("latest-release")] string LatestRelease, [property: JsonProperty("latest-release-date")] string LatestReleaseDate, [property: JsonProperty("security")] bool Security, [property: JsonProperty("latest-runtime")] string LatestRuntime, [property: JsonProperty("latest-sdk")] string LatestSdk, [property: JsonProperty("release-type")] string ReleaseType, [property: JsonProperty("support-phase")] string SupportPhase, [property: JsonProperty("eol-date")] string EolDate, [property: JsonProperty("releases.json")] string ReleasesJson, [property: JsonProperty("releases")] List<ReleaseDetail> Releases);
+public record MajorRelease(
+    [property: JsonProperty("channel-version")] string ChannelVersion, 
+    [property: JsonProperty("latest-release")] string LatestRelease, 
+    [property: JsonProperty("latest-release-date")] string LatestReleaseDate, 
+    [property: JsonProperty("security")] bool Security, 
+    [property: JsonProperty("latest-runtime")] string LatestRuntime, 
+    [property: JsonProperty("latest-sdk")] string LatestSdk, 
+    [property: JsonProperty("release-type")] string ReleaseType, 
+    [property: JsonProperty("support-phase")] string SupportPhase, 
+    [property: JsonProperty("eol-date")] string EolDate, 
+    [property: JsonProperty("releases.json")] string ReleasesJson, 
+    [property: JsonProperty("releases")] List<ReleaseDetail> Releases
+    );
 
-public record ReleaseDetail([property: JsonProperty("release-date")] string ReleaseDate, [property: JsonProperty("release-version")] string ReleaseVersion, [property: JsonProperty("security")] bool Security, [property: JsonProperty("cve-list")] List<Cve> Cves);
+public record ReleaseDetail(
+    [property: JsonProperty("release-date")] string ReleaseDate, 
+    [property: JsonProperty("release-version")] string ReleaseVersion, 
+    [property: JsonProperty("security")] bool Security, 
+    [property: JsonProperty("cve-list")] List<Cve> Cves
+    );
 
-public record Cve([property: JsonProperty("cve-id")] string CveId,[property: JsonProperty("cve-url")] string CveUrl);
+public record Cve(
+    [property: JsonProperty("cve-id")] string CveId,
+    [property: JsonProperty("cve-url")] string CveUrl
+    );
 
 // Report
-public record Report([property: JsonProperty("report-date")] string ReportDate, [property: JsonProperty("versions")] IList<Version> Versions);
+public record Report(
+    [property: JsonProperty("report-date")] string ReportDate, 
+    [property: JsonProperty("versions")] IList<Version> Versions
+    );
 
-public record Version([property: JsonProperty("version")] string MajorVersion, [property: JsonProperty("supported")] bool Supported, [property: JsonProperty("eol-date")] string EolDate, [property: JsonProperty("support-ends-in-days")] int SupportEndsInDays, [property: JsonProperty("releases")] IList<Release> Releases);
+public record Version(
+    [property: JsonProperty("version")] string MajorVersion, 
+    [property: JsonProperty("supported")] bool Supported, 
+    [property: JsonProperty("eol-date")] string EolDate, 
+    [property: JsonProperty("support-ends-in-days")] int SupportEndsInDays, 
+    [property: JsonProperty("releases")] IList<Release> Releases
+    );
 
-public record Release([property: JsonProperty("release-date")] string ReleaseDate, [property: JsonProperty("released-days-ago")] int ReleasedDaysAgo, [property: JsonProperty("release-version")] string BuildVersion, [property: JsonProperty("security")] bool Security, [property: JsonProperty("cve-list")] IList<Cve> Cves);
+public record Release(
+    [property: JsonProperty("release-date")] string ReleaseDate, 
+    [property: JsonProperty("released-days-ago")] int ReleasedDaysAgo, 
+    [property: JsonProperty("release-version")] string BuildVersion, 
+    [property: JsonProperty("security")] bool Security, 
+    [property: JsonProperty("cve-list")] IList<Cve> Cves
+    );

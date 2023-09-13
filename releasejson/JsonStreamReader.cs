@@ -32,7 +32,7 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
 
     public static int Size => 4 * 1024;
 
-    public async Task Advance()
+    public async Task AdvanceAsync()
     {
         // Save off existing text
         int leftoverLength = FlipBuffer();

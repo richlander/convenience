@@ -36,7 +36,7 @@ public class JsonPipeReader(PipeReader reader, ReadResult result)
 
     public ReadOnlySequence<byte> Text => _text;
 
-    public async Task Advance()
+    public async Task AdvanceAsync()
     {
         _pipeReader.AdvanceTo(_position);
         var result = await _pipeReader.ReadAsync();
@@ -172,12 +172,5 @@ public class JsonPipeReader(PipeReader reader, ReadResult result)
         }
 
         return found;
-    }
-
-    public static async Task<JsonPipeReader> FromStream(Stream stream)
-    {
-        var pipeReader = PipeReader.Create(stream, new StreamPipeReaderOptions(bufferSize: 16 * 1024));
-        var result = await pipeReader.ReadAsync();
-        return new JsonPipeReader(pipeReader, result);
     }
 }
