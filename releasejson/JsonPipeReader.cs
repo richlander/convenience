@@ -32,10 +32,6 @@ public class JsonPipeReader(PipeReader reader, ReadResult result)
 
     public int Depth => _depth;
 
-    public long BytesConsumed => _bytesConsumed;
-
-    public ReadOnlySequence<byte> Text => _text;
-
     public async Task AdvanceAsync()
     {
         _pipeReader.AdvanceTo(_position);

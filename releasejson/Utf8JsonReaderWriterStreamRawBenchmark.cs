@@ -24,14 +24,22 @@ public static class Utf8JsonReaderWriterStreamRawBenchmark
 
     public static async Task<Stream> MakeReportAsync()
     {
-        var httpClient = new HttpClient();
+        // Make network call
+        using var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         var stream = await releaseMessage.Content.ReadAsStreamAsync();
+
+        // Acquire byte[] as a buffer for the Stream 
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(JsonStreamReader.Size);
+
+        // Process JSON
         var memory = new MemoryStream();
         Utf8JsonWriter utf8JsonWriterwriter = new(memory);
         var releases = await ReleasesJsonReaderReportWriter.FromStream(stream, rentedArray, utf8JsonWriterwriter);
         await releases.Write();
+        ArrayPool<byte>.Shared.Return(rentedArray);
+
+        // Flush stream and prepare for reader
         memory.Flush();
         memory.Position= 0;
         return memory;

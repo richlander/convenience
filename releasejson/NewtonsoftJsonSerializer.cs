@@ -15,14 +15,17 @@ public class NewtonsoftJsonSerializerBenchmark
 
     public static async Task<string> MakeReportAsync()
     {
-        var httpClient = new HttpClient();
+        // Make network call
+        using var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
-        var stream = await releaseMessage.Content.ReadAsStreamAsync();
+        using var stream = await releaseMessage.Content.ReadAsStreamAsync();
 
+        // Attach stream to serializer
         JsonSerializer serializer = new();
         using StreamReader sr = new(stream);
         using JsonReader reader = new JsonTextReader(sr);
 
+        // Process JSON
         MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception();
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         return JsonConvert.SerializeObject(report);
@@ -43,7 +46,7 @@ public class NewtonsoftJsonSerializerBenchmark
         
         foreach (ReleaseDetail releaseDetail in release.Releases)
         {
-            if (!releaseDetail.Security && securityOnly)
+            if (securityOnly && !releaseDetail.Security)
             {
                 continue;
             }

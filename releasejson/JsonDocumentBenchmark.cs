@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using JsonConfig;
@@ -31,13 +32,6 @@ public static class JsonDocumentBenchmark
         var releases = doc["releases"]?.AsArray() ?? throw new Exception(JsonBenchmark.BADJSON);
         
         // Generate report
-        var reportReleaseArray = new JsonArray();
-
-        foreach(var releaseReport in GetReleasesForReport(releases))
-        {
-            reportReleaseArray.Add(releaseReport);
-        }
-
         var report = new JsonObject()
         {
             ["report-date"] = DateTime.Now.ToShortDateString(),
@@ -49,19 +43,19 @@ public static class JsonDocumentBenchmark
                     ["supported"] = supported,
                     ["eol-date"] = eolDate,
                     ["support-ends-in-days"] = eolDate is null ? null : GetDaysAgo(eolDate, true),
-                    ["releases"] = reportReleaseArray,
+                    ["releases"] = GetReportForReleases(releases),
                 }
             }
         };
 
-        var options = new JsonSerializerOptions { WriteIndented = false };
-        return report.ToJsonString(options);
+        return report.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
     }
 
     // Get first and first security release
-    static IEnumerable<JsonObject> GetReleasesForReport(JsonArray releases)
+    static JsonArray GetReportForReleases(JsonArray releases)
     {
         var securityOnly = false;
+        JsonArray reportReleases = [];
 
         foreach (var releaseVal in releases)
         {
@@ -87,7 +81,7 @@ public static class JsonDocumentBenchmark
 
             var cves = release["cve-list"] ?? throw new Exception(JsonBenchmark.BADJSON);
 
-            var reportRelease = new JsonObject()
+            var releaseObject = new JsonObject()
             {
                 ["release-version"] = releaseVersion,
                 ["security"] = security,
@@ -96,15 +90,15 @@ public static class JsonDocumentBenchmark
                 ["cve-list"] = cves.DeepClone()
             };
 
-            yield return reportRelease;
+            reportReleases.Add(releaseObject);
 
             if (security)
             {
-                yield break;
+                break;
             }
         }
 
-        yield break;
+        return reportReleases;
     }
 
     static int GetDaysAgo(string date, bool positiveNumber = false)

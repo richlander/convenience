@@ -20,7 +20,7 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
 
     public static async Task<string> MakeReportAsync()
     {
-        HttpClient httpClient= new();
+        using HttpClient httpClient= new();
         var release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.Url, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         return JsonSerializer.Serialize(report, ReportRecordContext.Default.Report);

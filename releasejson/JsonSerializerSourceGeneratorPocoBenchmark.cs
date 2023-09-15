@@ -17,7 +17,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
 
     public static async Task<string> MakeReportAsync()
     {
-        HttpClient httpClient= new();
+        using HttpClient httpClient= new();
         MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.Url, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
         Report report = Report.Get(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         return JsonSerializer.Serialize(report, ReportContext.Default.Report);

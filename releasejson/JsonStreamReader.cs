@@ -28,8 +28,6 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
 
     public int Depth => _depth;
 
-    public long BytesConsumed => _bytesConsumed;
-
     public static int Size => 4 * 1024;
 
     public async Task AdvanceAsync()
@@ -39,10 +37,6 @@ public class JsonStreamReader(Stream stream, byte[] buffer, int readCount)
 
         // Read from stream to fill remainder of buffer
         int read = await _stream.ReadAsync(_buffer.AsMemory()[leftoverLength..]);
-        if (read <= 0)
-        {
-            
-        }
         _readCount = read + leftoverLength;
     }
 
