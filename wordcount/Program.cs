@@ -13,6 +13,7 @@ List<Benchmark> benchmarks =
     new(nameof(FileOpenBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
     new(nameof(FileOpenSearchValuesBenchmark), FileOpenSearchValuesBenchmark.FileOpenSearchValuesBenchmark.Count),
     new(nameof(FileOpenSToubBenchmark), FileOpenSToubBenchmark.FileOpenSToubBenchmark.Count),
+    new(nameof(FileOpenSearchValuesSToubBenchmark), FileOpenSearchValuesSToubBenchmark.FileOpenSearchValuesSToubBenchmark.Count),
     new(nameof(FileOpenHandleBenchmark), FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count),
 ];
 
