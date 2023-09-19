@@ -1,384 +1,126 @@
-﻿using System.Buffers;
-using System.Text;
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
-using Microsoft.CodeAnalysis.Text;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
+using BenchmarkData;
 
-// https://github.com/dotnet/roslyn/issues/47629
-#pragma warning disable IDE0057
-#pragma warning disable CA1050
-#pragma warning disable CA1822
+var dir = Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? throw new Exception("Directory could not be found");  
+var path = Path.Combine(dir, BenchmarkValues.FilePath);
 
-BenchmarkRunner.Run(typeof(CountOneFile));
-// BenchmarkRunner.Run(typeof(CountMultiFile));
+List<Benchmark> benchmarks =
+[
+    new(nameof(ReadAllLinesBenchmark), ReadAllLinesBenchmark.FileReadAllLinesBenchmark.Count),
+    new(nameof(ReadLinesBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
+    new(nameof(FileOpenTextBenchmark), FileOpenTextBenchmark.FileOpenTextBenchmark.Count),
+    new(nameof(FileOpenBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
+    new(nameof(FileOpenSearchValuesBenchmark), FileOpenSearchValuesBenchmark.FileOpenSearchValuesBenchmark.Count),
+    new(nameof(FileOpenSToubBenchmark), FileOpenSToubBenchmark.FileOpenSToubBenchmark.Count),
+    new(nameof(FileOpenHandleBenchmark), FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count),
+];
 
-// string path = args.Length is 0 ? CountMultiFile.DirectoryPath : args[0];
-// var counts = CountMultiFile.Count_File_OpenHandle(path);
-// CountMultiFile.PrintCounts(counts);
+int index = -1;
 
-// string path = args.Length > 0 ? args[0] : CountOneFile.FilePath;
-// var counts = CountOneFile.Count_File_OpenHandle(path);
-// CountOneFile.PrintCounts(counts);
+if (args is {Length: >0} && args[0] is {Length: > 0})
+{
+    index = int.Parse(args[0]);
+}
 
-// var countGroup = new Counts[]
+if (index is -1)
+{
+    index = 16;
+}
+
+if (index >= 10)
+{
+    int iterations = index is 100 ? 1 : index;
+    List<BenchmarkResult> benchmarkResults = [];
+
+    for (int i = 0; i < iterations; i++)
+    {
+        Console.WriteLine("***");
+        Console.WriteLine($"*** Pass {i} ****************");
+        Console.WriteLine("***");
+
+        foreach (var benchmark in benchmarks)
+        {
+            Console.WriteLine();
+            Console.WriteLine($"=/=\\= {benchmark.Name} =/=\\=");
+
+            var stopwatch = Stopwatch.StartNew();
+            var counts = benchmark.Test(path);
+            stopwatch.Stop();
+            benchmarkResults.Add(new(i, benchmark.Name, stopwatch.ElapsedTicks, counts));
+
+            Console.WriteLine();
+            Console.WriteLine($"{nameof(Stopwatch.ElapsedTicks)}: {stopwatch.ElapsedTicks};");
+            Console.WriteLine($"{counts.Lines} {counts.Words} {counts.Bytes}");
+            Console.WriteLine();
+        }
+}
+
+    Console.WriteLine();
+
+    Console.WriteLine("Pass,Benchmark,Duration,Lines,Words,Bytes");
+    foreach (var item in benchmarkResults)
+    {
+        var counts = item.Counts;
+        Console.WriteLine($"{item.Pass},{item.Benchmark},{item.Duration},{counts.Lines},{counts.Words},{counts.Bytes}");
+    }
+
+    Console.WriteLine();
+    Console.WriteLine();
+
+    // Remove warmup iterations and outliers (using a TRIMMEAN-like approach)
+    var resultDivisor = 1_000_000;
+    var warmupIterations = int.Min(6, iterations / 4);
+    var warmupSkipCount = warmupIterations * benchmarks.Count;
+    var outlierSkipCount = int.Min(2, iterations / 10);
+    var resultValues = benchmarkResults.Skip(warmupSkipCount).GroupBy(r => r.Benchmark).Select(g => new {Name=g.Key, Values=g.Select(r => r.Duration).Order().Skip(outlierSkipCount).SkipLast(outlierSkipCount)});
+    var results = resultValues.Select(r => new {Name=r.Name, Values=r.Values.ToList(), Average=r.Values.Average()/resultDivisor}).ToList();
+    
+    var expectedIterations = iterations - warmupIterations - (outlierSkipCount * 2);
+
+    Console.WriteLine($"Total passes: {iterations}");
+    Console.WriteLine($"Warmup passes: {warmupIterations}");
+    Console.WriteLine($"Outlier passes ignored: {outlierSkipCount * 2}");
+    Console.WriteLine($"Measured passes: {results[0].Values.Count}");
+    Console.WriteLine();
+
+    foreach (var result in results.OrderBy(r => r.Average))
+    {
+        Console.WriteLine($"{result.Name}: {result.Average:.##}");
+
+        if (result.Values.Count != expectedIterations)
+        {
+            Console.WriteLine($"***Warning: iterator count doesn't match. Expected {expectedIterations} and observed {result.Values.Count}.");
+        }
+    }
+}
+
+// static void PrintCounts(List<BenchmarkResult> counts)
 // {
-//     CountOneFile.Count_File_ReadAllLines(path),
-//     CountOneFile.Count_File_ReadLines(path),
-//     CountOneFile.Count_File_OpenText(path),
-//     CountOneFile.Count_File_Open(path),
-//     CountOneFile.Count_File_OpenHandle(path),
-// };
+//     foreach (var count in counts)
+//     {
+//         Console.WriteLine($"{count.Line} {count.Word} {count.Bytes} {count.File}");
+//     }
 
-// foreach (var count in countGroup)
-// {
-//     Console.WriteLine($"{count.Line} {count.Word} {count.Bytes} {count.File}");
+//     var totalLines = counts.Sum(c => c.Line);
+//     var totalWords = counts.Sum(c => c.Word);
+//     var totalBytes = counts.Sum(c => c.Bytes);
+
+//     if (counts.Count > 1)
+//     {
+//         Console.WriteLine($"{totalLines} {totalWords} {totalBytes} total");
+//     }
 // }
 
-public record struct Counts(int Line, int Word, int Bytes, string File);
+    // public static void PrintCounts(BenchmarkResult counts)
+    // {
+    //     Console.WriteLine($"{counts.Line} {counts.Word} {counts.Bytes} {counts.File}");
+    // }
 
-[MemoryDiagnoser]
-[HideColumns("Error", "StdDev", "Median", "RatioSD")]
-public class CountOneFile
-{ 
-    private static readonly int Size = 16 * 1024;
-    public static readonly string FilePath = "Clarissa_Harlowe/clarissa_volume1.txt";
-
-    [Benchmark]
-    public Counts File_ReadAllLines() => Count_File_ReadAllLines(FilePath);
-
-    public static Counts Count_File_ReadAllLines(string path)
-    {
-        int wordCount = 0;
-        int lineCount = 0;
-        int charCount = 0;
-
-        foreach (var line in File.ReadAllLines(path))
-        {
-            lineCount++;
-            charCount += line.Length;
-            bool wasSpace = true;
-
-            foreach (var c in line)
-            {
-                bool isSpace = Char.IsWhiteSpace(c);
-
-                if (!isSpace && wasSpace)
-                {
-                    wordCount++;
-                }
-
-                wasSpace = isSpace;
-            }
-        }
-
-        return new(lineCount, wordCount, charCount, Path.GetFileName(path));
-    }
-
-    [Benchmark]
-    public Counts File_ReadLines() => Count_File_ReadLines(FilePath);
-
-    public static Counts Count_File_ReadLines(string path)
-    {
-        int wordCount = 0;
-        int lineCount = 0;
-        int charCount = 0;
-
-        foreach (var line in File.ReadLines(path))
-        {
-            lineCount++;
-            charCount += line.Length;
-            bool wasSpace = true;
-
-            foreach (var c in line)
-            {
-                bool isSpace = Char.IsWhiteSpace(c);
-
-                if (!isSpace && wasSpace)
-                {
-                    wordCount++;
-                }
-
-                wasSpace = isSpace;
-            }
-        }
-
-        return new(lineCount, wordCount, charCount, Path.GetFileName(path));
-    }
-
-    [Benchmark]
-    public Counts File_OpenText() => Count_File_OpenText(FilePath);
-
-    public static Counts Count_File_OpenText(string path)
-    {
-        int wordCount = 0;
-        int lineCount = 0;
-        int charCount = 0;
-        using var stream = File.OpenText(path);
-
-        string? line = null;
-        while ((line = stream.ReadLine()) is not null)
-        {
-            lineCount++;
-            charCount += line.Length;
-            bool wasSpace = true;
-
-            foreach (var c in line)
-            {
-                bool isSpace = Char.IsWhiteSpace(c);
-
-                if (!isSpace && wasSpace)
-                {
-                    wordCount++;
-                }
-
-                wasSpace = isSpace;
-            }
-        }
-
-        return new(lineCount, wordCount, charCount, Path.GetFileName(path));
-    }
-
-    [Benchmark]
-    public Counts File_Open() => Count_File_Open(FilePath);
-    
-    public static Counts Count_File_Open(string path)
-    {
-        const byte LINE_FEED = (byte)'\n';
-        const byte CARRIAGE_RETURN = (byte)'\r';
-        const byte SPACE = (byte)' ';
-        ReadOnlySpan<byte> searchChars = stackalloc[] {SPACE, LINE_FEED};
-
-        int wordCount = 0;
-        int lineCount = 0;
-        int byteCount = 0;
-        int read = 0;
-        bool wasSpace = true;
-
-        using var stream = File.Open(path, FileMode.Open, FileAccess.Read);
-        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Size);
-        Span<byte> buffer = rentedArray;
-        ReadOnlySpan<byte> text = buffer;
-
-        while ((read = stream.Read(buffer)) > 0)
-        {                
-            byteCount += read;
-            text = buffer.Slice(0, read);
-            
-            while (text.Length > 0)
-            {
-                if (text[0] is SPACE)
-                {
-                    wasSpace = true;
-                    text = text.Slice(1);
-                    continue;
-                }
-                else if (text[0] is CARRIAGE_RETURN)
-                {
-                    text = text.Slice(1);
-                    continue;
-                }
-                else if (text[0] is LINE_FEED)
-                {
-                    wasSpace = true;
-                    text = text.Slice(1);
-                    lineCount++;
-                    continue;
-                }
-                else if (wasSpace)
-                {
-                    wasSpace = false;
-                    wordCount++;
-                }
-
-                int nextIndex = 0;
-                int indexOf = text.IndexOfAny(searchChars);
-
-                if (indexOf > -1)
-                {
-                    wasSpace = true;
-                    nextIndex = indexOf + 1;
-
-                    if (text[indexOf] is LINE_FEED)
-                    {
-                        lineCount++;       
-                    }
-                }
-                else
-                {
-                    if (wasSpace)
-                    {
-                        wordCount++;
-                    }
-
-                    wasSpace = false;
-                    nextIndex = text.Length;
-                }
-
-                text = text.Slice(nextIndex);
-            }
-        }
-
-        ArrayPool<byte>.Shared.Return(rentedArray);
-        return new(lineCount, wordCount, byteCount, Path.GetFileName(path));
-    }
-
-    [Benchmark(Baseline = true)]
-    public Counts File_OpenHandle() => Count_File_OpenHandle(FilePath);
-
-    public static Counts Count_File_OpenHandle(string path)
-    {
-        const byte NEWLINE = (byte)'\n';
-        const byte CARRIAGE_RETURN = (byte)'\r';
-        const byte SPACE = (byte)' ';
-        ReadOnlySpan<byte> searchChars = stackalloc[] {SPACE, NEWLINE};
-
-        int wordCount = 0;
-        int lineCount = 0;
-        int byteCount = 0;
-        int read = 0;
-        bool wasSpace = true;
-
-        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
-        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(Size);
-        Span<byte> buffer = rentedArray;
-        ReadOnlySpan<byte> text = buffer;
-
-        while ((read = RandomAccess.Read(handle, buffer, byteCount)) > 0)
-        {
-            byteCount += read;
-            text = buffer.Slice(0, read);
-            
-            while (text.Length > 0)
-            {
-                if (text[0] is SPACE)
-                {
-                    wasSpace = true;
-                    text = text.Slice(1);
-                    continue;
-                }
-                else if (text[0] is CARRIAGE_RETURN)
-                {
-                    text = text.Slice(1);
-                    continue;
-                }
-                else if (text[0] is NEWLINE)
-                {
-                    wasSpace = true;
-                    text = text.Slice(1);
-                    lineCount++;
-                    continue;
-                }
-                else if (wasSpace)
-                {
-                    wasSpace = false;
-                    wordCount++;
-                }
-
-                int nextIndex = 0;
-                int indexOf = text.IndexOfAny(searchChars);
-
-                if (indexOf > -1)
-                {
-                    wasSpace = true;
-                    nextIndex = indexOf + 1;
-
-                    if (text[indexOf] is NEWLINE)
-                    {
-                        lineCount++;       
-                    }
-                }
-                else
-                {
-                    if (wasSpace)
-                    {
-                        wordCount++;
-                    }
-
-                    wasSpace = false;
-                    nextIndex = text.Length;
-                }
-
-                text = text.Slice(nextIndex);
-            }
-        }
-
-        ArrayPool<byte>.Shared.Return(rentedArray);
-        return new(lineCount, wordCount, byteCount, Path.GetFileName(path));
-    }
-
-    public static void PrintCounts(Counts counts)
-    {
-        Console.WriteLine($"{counts.Line} {counts.Word} {counts.Bytes} {counts.File}");
-    }
-
-    public static void PrintMultipleCounts(IEnumerable<Counts> countsSet)
-    {
-        foreach (var counts in countsSet)
-        {
-            PrintCounts(counts);
-        }
-    }
-}
-
-[MemoryDiagnoser]
-[HideColumns("Error", "StdDev", "Median", "RatioSD")]
-public class CountMultiFile
-{
-    public static readonly string DirectoryPath = "./Clarissa_Harlowe/";
-
-    [Benchmark]
-    public List<Counts> File_ReadLines() => Count_File_ReadLines(CountMultiFile.DirectoryPath);
-
-    public static List<Counts> Count_File_ReadLines(string path)
-    {
-        if (!Directory.Exists(path))
-        {
-            throw new Exception($"Path doesn't exist: {path}; Current directory: {Directory.GetCurrentDirectory()}");
-        }
-
-        List<Counts> results = new();
-
-        foreach (var file in Directory.EnumerateFiles(path).OrderBy(f => f))
-        {
-            var counts = CountOneFile.Count_File_ReadLines(file);
-            results.Add(counts);
-        }
-
-        return results;
-    }
-
-    [Benchmark(Baseline = true)]
-    public List<Counts> File_OpenHandle() => Count_File_OpenHandle(CountMultiFile.DirectoryPath);
-
-    public static List<Counts> Count_File_OpenHandle(string path)
-    {
-        if (!Directory.Exists(path))
-        {
-            throw new Exception($"Path doesn't exist: {path}; Current directory: {Directory.GetCurrentDirectory()}");
-        }
-
-        List<Counts> results = new();
-
-        foreach (var file in Directory.EnumerateFiles(path).OrderBy(f => f))
-        {
-            var counts = CountOneFile.Count_File_OpenHandle(file);
-            results.Add(counts);
-        }
-
-        return results;
-    }
-
-    public static void PrintCounts(List<Counts> counts)
-    {
-        foreach (var count in counts)
-        {
-            Console.WriteLine($"{count.Line} {count.Word} {count.Bytes} {count.File}");
-        }
-
-        var totalLines = counts.Sum(c => c.Line);
-        var totalWords = counts.Sum(c => c.Word);
-        var totalBytes = counts.Sum(c => c.Bytes);
-
-        Console.WriteLine($"{totalLines} {totalWords} {totalBytes} total");
-    }
-}
+    // public static void PrintMultipleCounts(IEnumerable<BenchmarkResult> countsSet)
+    // {
+    //     foreach (var counts in countsSet)
+    //     {
+    //         PrintCounts(counts);
+    //     }
+    // }
