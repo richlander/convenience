@@ -7,7 +7,7 @@ namespace FileOpenSearchValuesSToubBenchmark;
 
 public static class FileOpenSearchValuesSToubBenchmark
 {
-    public static Counts Count(string path)
+    public static Count Count(string path)
     {
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
         int wordCount = 0, lineCount = 0, byteCount = 0;

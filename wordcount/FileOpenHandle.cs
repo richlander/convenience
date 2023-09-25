@@ -5,7 +5,7 @@ namespace FileOpenHandleBenchmark;
 
 public static class FileOpenHandleBenchmark
 {
-    public static Counts Count(string path)
+    public static Count Count(string path)
     {
         const byte NEWLINE = (byte)'\n';
         const byte CARRIAGE_RETURN = (byte)'\r';

@@ -7,7 +7,7 @@ namespace FileOpenSToubBenchmark;
 
 public static class FileOpenSToubBenchmark
 {
-    public static Counts Count(string path)
+    public static Count Count(string path)
     {
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
         int wordCount = 0, lineCount = 0, byteCount = 0;

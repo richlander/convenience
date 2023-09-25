@@ -5,7 +5,7 @@ namespace ReadLinesBenchmark;
 
 public static class FileReadLinesBenchmark
 {
-    public static Counts Count(string path)
+    public static Count Count(string path)
     {
         int wordCount = 0;
         int lineCount = 0;

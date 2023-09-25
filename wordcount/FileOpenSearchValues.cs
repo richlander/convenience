@@ -5,7 +5,7 @@ namespace FileOpenSearchValuesBenchmark;
 
 public static class FileOpenSearchValuesBenchmark
 {
-    public static Counts Count(string path)
+    public static Count Count(string path)
     {
         const byte LINE_FEED = (byte)'\n';
         const byte CARRIAGE_RETURN = (byte)'\r';
