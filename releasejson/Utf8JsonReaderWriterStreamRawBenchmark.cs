@@ -22,12 +22,47 @@ public static class Utf8JsonReaderWriterStreamRawBenchmark
         return (int)stream.Length;
     }
 
+    public static async Task<int> RunLocalAsync()
+    {
+        var stream = await MakeReportLocalAsync();
+
+        for (int i = 0; i < stream.Length; i++)
+        {
+            Console.Write((char)stream.ReadByte());
+        }
+
+        Console.WriteLine();
+        return (int)stream.Length;
+    }
+
+
     public static async Task<Stream> MakeReportAsync()
     {
         // Make network call
         using var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         var stream = await releaseMessage.Content.ReadAsStreamAsync();
+
+        // Acquire byte[] as a buffer for the Stream 
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(JsonStreamReader.Size);
+
+        // Process JSON
+        var memory = new MemoryStream();
+        Utf8JsonWriter utf8JsonWriterwriter = new(memory);
+        var releases = await ReleasesJsonReaderReportWriter.FromStream(stream, rentedArray, utf8JsonWriterwriter);
+        await releases.Write();
+        ArrayPool<byte>.Shared.Return(rentedArray);
+
+        // Flush stream and prepare for reader
+        memory.Flush();
+        memory.Position= 0;
+        return memory;
+    }
+
+    public static async Task<Stream> MakeReportLocalAsync()
+    {
+        // Local local file
+        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
 
         // Acquire byte[] as a buffer for the Stream 
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(JsonStreamReader.Size);

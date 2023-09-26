@@ -16,6 +16,14 @@ public static class JsonDocumentBenchmark
         return json.Length;
     }
 
+    public static async Task<int> RunLocalAsync()
+    {
+        var json = await MakeReportLocalAsync();
+        Console.WriteLine(json);
+        Console.WriteLine();
+        return json.Length;
+    }
+
     public static async Task<string> MakeReportAsync()
     {
         // Make network call
@@ -25,6 +33,39 @@ public static class JsonDocumentBenchmark
 
         // Parse Json from stream
         var doc = JsonNode.Parse(stream) ?? throw new Exception(JsonBenchmark.BADJSON);
+        var version = doc["channel-version"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
+        var supportPhase = doc["support-phase"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
+        var supported = supportPhase is "active" or "maintenance";
+        var eolDate = doc["eol-date"]?.ToString();
+        var releases = doc["releases"]?.AsArray() ?? throw new Exception(JsonBenchmark.BADJSON);
+        
+        // Generate report
+        var report = new JsonObject()
+        {
+            ["report-date"] = DateTime.Now.ToShortDateString(),
+            ["versions"] = new JsonArray()
+            {
+                new JsonObject()
+                {
+                    ["version"] = version,
+                    ["supported"] = supported,
+                    ["eol-date"] = eolDate,
+                    ["support-ends-in-days"] = eolDate is null ? null : GetDaysAgo(eolDate, true),
+                    ["releases"] = GetReportForReleases(releases),
+                }
+            }
+        };
+
+        return report.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
+    }
+
+   public static async Task<string> MakeReportLocalAsync()
+    {
+        // Local local file
+        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
+
+        // Parse Json from stream
+        var doc = await JsonNode.ParseAsync(stream) ?? throw new Exception(JsonBenchmark.BADJSON);
         var version = doc["channel-version"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
         var supportPhase = doc["support-phase"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
         var supported = supportPhase is "active" or "maintenance";

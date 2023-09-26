@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using JsonConfig;
 using Newtonsoft.Json;
 
@@ -13,12 +14,39 @@ public class NewtonsoftJsonSerializerBenchmark
         return json.Length;
     }
 
+    public static async Task<int> RunLocalAsync()
+    {
+        var json = MakeReportLocalAsync();
+        Console.WriteLine(json);
+        Console.WriteLine();
+        // This is here to maintain the same signature as the other test methods
+        // Because Json.NET doesn't have an async serializer
+        await Task.CompletedTask;
+        return json.Length;
+    }
+
     public static async Task<string> MakeReportAsync()
     {
         // Make network call
         using var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         using var stream = await releaseMessage.Content.ReadAsStreamAsync();
+
+        // Attach stream to serializer
+        JsonSerializer serializer = new();
+        using StreamReader sr = new(stream);
+        using JsonReader reader = new JsonTextReader(sr);
+
+        // Process JSON
+        MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception();
+        Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
+        return JsonConvert.SerializeObject(report);
+    }
+
+    public static string MakeReportLocalAsync()
+    {
+        // Local local file
+        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
 
         // Attach stream to serializer
         JsonSerializer serializer = new();

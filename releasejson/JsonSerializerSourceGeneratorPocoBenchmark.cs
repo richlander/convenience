@@ -15,10 +15,26 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
         return json.Length;
     }
 
+    public static async Task<int> RunLocalAsync()
+    {
+        var json = await MakeReportLocalAsync();
+        Console.WriteLine(json);
+        Console.WriteLine();
+        return json.Length;
+    }
+
     public static async Task<string> MakeReportAsync()
     {
         using HttpClient httpClient= new();
         MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.Url, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
+        Report report = Report.Get(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
+        return JsonSerializer.Serialize(report, ReportContext.Default.Report);
+    }
+
+    public static async Task<string> MakeReportLocalAsync()
+    {
+        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
+        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
         Report report = Report.Get(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         return JsonSerializer.Serialize(report, ReportContext.Default.Report);
     }

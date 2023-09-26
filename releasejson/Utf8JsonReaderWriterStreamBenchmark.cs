@@ -23,6 +23,19 @@ public static class Utf8JsonReaderWriterStreamBenchmark
         return (int)stream.Length;
     }
 
+    public static async Task<int> RunLocalAsync()
+    {
+        var stream = await MakeReportLocalAsync();
+
+        for (int i = 0; i < stream.Length; i++)
+        {
+            Console.Write((char)stream.ReadByte());
+        }
+
+        Console.WriteLine();
+        return (int)stream.Length;
+    }
+
     public static async Task<Stream> MakeReportAsync()
     {
         // Make network call
@@ -47,7 +60,31 @@ public static class Utf8JsonReaderWriterStreamBenchmark
         memory.Position= 0;
         return memory;
     }
+
+    public static async Task<Stream> MakeReportLocalAsync()
+    {
+        // Local local file
+        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
+
+        // Acquire byte[] as a buffer for the Stream 
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(JsonStreamReader.Size);
+        int read = await stream.ReadAsync(rentedArray);
+
+        // Process JSON
+        var releasesReader = new ReleasesJsonReader(new(stream, rentedArray, read));
+        var memory = new MemoryStream();
+        var reportWriter = new ReportJsonWriter(releasesReader, memory);
+        await reportWriter.Write();
+        ArrayPool<byte>.Shared.Return(rentedArray);
+
+        // Flush stream and prepare for reader
+        memory.Flush();
+        memory.Position= 0;
+        return memory;
+    }
 }
+
+
 
 public class ReportJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
 {

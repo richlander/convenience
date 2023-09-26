@@ -2,7 +2,7 @@
 using System.Runtime;
 using System.Runtime.InteropServices;
 
-List<Benchmark> benchmarks =
+List<Benchmark> webBenchmarks =
 [
     new(nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), async Task<int> () => await JsonSerializerBenchmark.JsonSerializerBenchmark.RunAsync()),
     new(nameof(JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark.RunAsync()),
@@ -14,11 +14,26 @@ List<Benchmark> benchmarks =
     new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async Task<int> () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.RunAsync()),
 ];
 
-int index = -1;
+List<Benchmark> localBenchmarks =
+[
+    new(nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), async Task<int> () => await JsonSerializerBenchmark.JsonSerializerBenchmark.RunLocalAsync()),
+    new(nameof(JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark.RunLocalAsync()),
+    new(nameof(JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark), async Task<int> () => await JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark.RunLocalAsync()),
+    new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async Task<int> () => await JsonDocumentBenchmark.JsonDocumentBenchmark.RunLocalAsync()),
+    new(nameof(Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark), async Task<int> () => await Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark.RunLocalAsync()),
+    new(nameof(Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark), async Task<int> () => await Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark.RunLocalAsync()),
+    new(nameof(Utf8JsonReaderWriterStreamRawBenchmark.Utf8JsonReaderWriterStreamRawBenchmark), async Task<int> () => await Utf8JsonReaderWriterStreamRawBenchmark.Utf8JsonReaderWriterStreamRawBenchmark.RunLocalAsync()),
+    new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async Task<int> () => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.RunLocalAsync()),
+];
 
-if (args is {Length: >0} && args[0] is {Length: > 0})
+var benchmarks = webBenchmarks;
+
+int index = args.Length > 0 && int.TryParse(args[0], out int num) ? num : -1;
+
+if (index >= 100)
 {
-    index = int.Parse(args[0]);
+    benchmarks = localBenchmarks;
+    index -= 100;
 }
 
 if (index is -1)
@@ -45,8 +60,8 @@ if (index >= 10)
             var length = await benchmark.Test();
             stopwatch.Stop();
             Console.WriteLine();
-            Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}; JSON Length: {length}");
-            benchmarkResults.Add(new(i, benchmark.Name, stopwatch.ElapsedMilliseconds,length));
+            Console.WriteLine($"{nameof(Stopwatch.ElapsedTicks)}: {stopwatch.ElapsedTicks}; JSON Length: {length}");
+            benchmarkResults.Add(new(i, benchmark.Name, stopwatch.ElapsedTicks,length));
         }
     }
 
@@ -62,11 +77,12 @@ if (index >= 10)
     Console.WriteLine();
 
     // Remove warmup iterations and outliers (using a TRIMMEAN-like approach)
+    var ticksDivisor = 1000_000.0;
     var warmupIterations = int.Min(6, iterations / 4);
     var warmupSkipCount = warmupIterations * benchmarks.Count;
     var outlierSkipCount = (int)(iterations * 0.1);
     var resultValues = benchmarkResults.Skip(warmupSkipCount).GroupBy(r => r.Name).Select(g => new {Name=g.Key, Values=g.Select(r => r.Duration).Order().Skip(outlierSkipCount).SkipLast(outlierSkipCount)});
-    var results = resultValues.Select(r => new {Name=r.Name, Values=r.Values.ToList(), Average=r.Values.Average()}).ToList();
+    var results = resultValues.Select(r => new {Name=r.Name, Values=r.Values.ToList(), Average=r.Values.Average() / ticksDivisor}).ToList();
     
     var expectedIterations = iterations - warmupIterations - (outlierSkipCount * 2);
 
@@ -74,11 +90,13 @@ if (index >= 10)
     Console.WriteLine($"Warmup passes: {warmupIterations}");
     Console.WriteLine($"Outlier passes ignored: {outlierSkipCount * 2}");
     Console.WriteLine($"Measured passes: {results[0].Values.Count}");
+    Console.WriteLine($"{nameof(Stopwatch.Frequency)}: {Stopwatch.Frequency}");
+    Console.WriteLine($"{nameof(ticksDivisor)}: {ticksDivisor}");
     Console.WriteLine();
 
     foreach (var result in results.OrderBy(r => r.Average))
     {
-        Console.WriteLine($"{result.Name}: {result.Average:.#}");
+        Console.WriteLine($"{result.Name}: {result.Average:.###}");
 
         if (result.Values.Count != expectedIterations)
         {

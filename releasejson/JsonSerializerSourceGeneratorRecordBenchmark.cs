@@ -18,10 +18,26 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
         return json.Length;
     }
 
+    public static async Task<int> RunLocalAsync()
+    {
+        var json = await MakeReportLocalAsync();
+        Console.WriteLine(json);
+        Console.WriteLine();
+        return json.Length;
+    }
+
     public static async Task<string> MakeReportAsync()
     {
         using HttpClient httpClient= new();
         var release = await httpClient.GetFromJsonAsync<MajorRelease>(JsonBenchmark.Url, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
+        Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
+        return JsonSerializer.Serialize(report, ReportRecordContext.Default.Report);
+    }
+
+    public static async Task<string> MakeReportLocalAsync()
+    {
+        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
+        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         return JsonSerializer.Serialize(report, ReportRecordContext.Default.Report);
     }

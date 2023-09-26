@@ -23,12 +23,54 @@ public static class Utf8JsonReaderWriterPipelineBenchmark
         return (int)stream.Length;
     }
 
+    public static async Task<int> RunLocalAsync()
+    {
+        var stream = await MakeReportLocalAsync();
+
+        for (int i = 0; i < stream.Length; i++)
+        {
+            Console.Write((char)stream.ReadByte());
+        }
+
+        Console.WriteLine();
+        return (int)stream.Length;
+    }
+
     public static async Task<Stream> MakeReportAsync()
     {
         // Make network call
         using var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
         var stream = await releaseMessage.Content.ReadAsStreamAsync();
+
+        // Attach stream to Pipe
+        var pipe = new Pipe();
+        var reader = pipe.Reader;
+        _ = CopyToWriter(pipe, stream);
+        var result = await reader.ReadAsync();
+
+        // Process JSON
+        var releasesReader = new ReleasesJsonReader(new(reader, result));
+        var memory = new MemoryStream();
+        var reportWriter = new ReportJsonWriter(releasesReader, memory);
+        await reportWriter.Write();
+
+        // Flush stream and prepare for reader
+        memory.Flush();
+        memory.Position= 0;
+        return memory;
+
+        static async Task CopyToWriter(Pipe pipe, Stream release)
+        {
+            await release.CopyToAsync(pipe.Writer);
+            pipe.Writer.Complete();
+        }
+    }
+
+    public static async Task<Stream> MakeReportLocalAsync()
+    {
+        // Local local file
+        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
 
         // Attach stream to Pipe
         var pipe = new Pipe();
