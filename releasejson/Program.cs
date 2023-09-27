@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Runtime;
 using System.Runtime.InteropServices;
+using JsonConfig;
 
 List<Benchmark> webBenchmarks =
 [
@@ -30,15 +31,19 @@ var benchmarks = webBenchmarks;
 
 int index = args.Length > 0 && int.TryParse(args[0], out int num) ? num : -1;
 
-if (index >= 100)
-{
-    benchmarks = localBenchmarks;
-    index -= 100;
-}
-
 if (index is -1)
 {
     index = 16;
+}
+else if (index >= 200)
+{
+    benchmarks = localBenchmarks;
+    index -= 200;
+}
+else if (index >= 100)
+{
+    JsonBenchmark.Url = JsonBenchmarkLocal.Url;
+    index -= 100;
 }
 
 if (index >= 10)
