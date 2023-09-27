@@ -10,7 +10,7 @@ public static class JsonDocumentBenchmark
 
     public static async Task<int> RunAsync()
     {
-        var json = await MakeReportAsync();
+        var json = await MakeReportAsync(JsonBenchmark.Url);
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
@@ -18,17 +18,17 @@ public static class JsonDocumentBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var json = await MakeReportLocalAsync();
+        var json = await MakeReportLocalAsync(JsonBenchmarkLocal.Path);
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
     }
 
-    public static async Task<string> MakeReportAsync()
+    public static async Task<string> MakeReportAsync(string url)
     {
         // Make network call
         var httpClient = new HttpClient();
-        using var responseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
+        using var responseMessage = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         var stream = await responseMessage.Content.ReadAsStreamAsync();
 
         // Parse Json from stream
@@ -59,10 +59,10 @@ public static class JsonDocumentBenchmark
         return report.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
     }
 
-   public static async Task<string> MakeReportLocalAsync()
+   public static async Task<string> MakeReportLocalAsync(string path)
     {
         // Local local file
-        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
+        using Stream stream = File.Open(path, FileMode.Open);
 
         // Parse Json from stream
         var doc = await JsonNode.ParseAsync(stream) ?? throw new Exception(JsonBenchmark.BADJSON);

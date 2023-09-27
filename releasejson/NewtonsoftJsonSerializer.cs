@@ -8,7 +8,7 @@ public class NewtonsoftJsonSerializerBenchmark
 {
     public static async Task<int> RunAsync()
     {
-        var json = await MakeReportAsync();
+        var json = await MakeReportAsync(JsonBenchmark.Url);
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
@@ -16,7 +16,7 @@ public class NewtonsoftJsonSerializerBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var json = MakeReportLocalAsync();
+        var json = MakeReportLocalAsync(JsonBenchmarkLocal.Path);
         Console.WriteLine(json);
         Console.WriteLine();
         // This is here to maintain the same signature as the other test methods
@@ -25,11 +25,11 @@ public class NewtonsoftJsonSerializerBenchmark
         return json.Length;
     }
 
-    public static async Task<string> MakeReportAsync()
+    public static async Task<string> MakeReportAsync(string url)
     {
         // Make network call
         using var httpClient = new HttpClient();
-        using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
+        using var releaseMessage = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         using var stream = await releaseMessage.Content.ReadAsStreamAsync();
 
         // Attach stream to serializer
@@ -43,10 +43,10 @@ public class NewtonsoftJsonSerializerBenchmark
         return JsonConvert.SerializeObject(report);
     }
 
-    public static string MakeReportLocalAsync()
+    public static string MakeReportLocalAsync(string file)
     {
         // Local local file
-        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
+        using Stream stream = File.Open(file, FileMode.Open);
 
         // Attach stream to serializer
         JsonSerializer serializer = new();

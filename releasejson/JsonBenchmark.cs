@@ -2,7 +2,12 @@ namespace JsonConfig;
 
 public static class JsonBenchmark
 {
+    // Real .NET 6 releases.jon
     public const string Official = "https://raw.githubusercontent.com/dotnet/core/main/release-notes/6.0/releases.json";
+    // Fake releases.json documents
+    // First fake one is official file as of August 2023 (for consistent numbers)
+    // The others are more fake
+    public const string FakeOfficial = "https://gist.githubusercontent.com/richlander/d690c90503469676b0f366c5f4ee2063/raw/711b3404e3a84bfea4da8c60435ac74f3785b511/releases.json";
     public const string FakeSecurityReleaseNearEnd = "https://gist.githubusercontent.com/richlander/408cd63769ab12386729e926f25d8858/raw/064d23ace456176f67784ed80aa5ce2d5b15f333/releases.json";
     public const string FakeSecurityReleaseAtEnd = "https://gist.githubusercontent.com/richlander/5c21d15497d153874da94ef8e1a89fc7/raw/85d5ba9abdc47dd753b3d85047f14693129dcd05/releases.json";
     public const string FakeNoSecurityRelease = "https://gist.githubusercontent.com/richlander/e7f1d03e0cea76539325dcc07a8f48df/raw/e05494f2c7e10715dfcd0cdcc2dc1fbd7cb89219/releases.json";
@@ -12,5 +17,5 @@ public static class JsonBenchmark
     public const string BADJSONREAD = "Cannot read JSON data.";
     public const string JSONOUTOFORDER = "JSON is bring read out of order";
 
-    public static string Url => JsonBenchmarkLocal.GetUrl();
+    public static string Url { get; set; } = FakeOfficial;
 }

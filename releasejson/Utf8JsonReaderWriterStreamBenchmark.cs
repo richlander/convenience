@@ -12,7 +12,7 @@ public static class Utf8JsonReaderWriterStreamBenchmark
 {
     public static async Task<int> RunAsync()
     {
-        var stream = await MakeReportAsync();
+        var stream = await MakeReportAsync(JsonBenchmark.Url);
 
         for (int i = 0; i < stream.Length; i++)
         {
@@ -25,7 +25,7 @@ public static class Utf8JsonReaderWriterStreamBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var stream = await MakeReportLocalAsync();
+        var stream = await MakeReportLocalAsync(JsonBenchmarkLocal.Path);
 
         for (int i = 0; i < stream.Length; i++)
         {
@@ -36,11 +36,11 @@ public static class Utf8JsonReaderWriterStreamBenchmark
         return (int)stream.Length;
     }
 
-    public static async Task<Stream> MakeReportAsync()
+    public static async Task<Stream> MakeReportAsync(string url)
     {
         // Make network call
         using var httpClient = new HttpClient();
-        using var releaseMessage = await httpClient.GetAsync(JsonBenchmark.Url, HttpCompletionOption.ResponseHeadersRead);
+        using var releaseMessage = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
         releaseMessage.EnsureSuccessStatusCode();
         using var jsonStream = await releaseMessage.Content.ReadAsStreamAsync();
 
@@ -61,10 +61,10 @@ public static class Utf8JsonReaderWriterStreamBenchmark
         return memory;
     }
 
-    public static async Task<Stream> MakeReportLocalAsync()
+    public static async Task<Stream> MakeReportLocalAsync(string path)
     {
         // Local local file
-        using Stream stream = File.Open(JsonBenchmarkLocal.GetFile(),FileMode.Open);
+        using Stream stream = File.Open(path, FileMode.Open);
 
         // Acquire byte[] as a buffer for the Stream 
         byte[] rentedArray = ArrayPool<byte>.Shared.Rent(JsonStreamReader.Size);
