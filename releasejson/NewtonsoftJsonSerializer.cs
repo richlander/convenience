@@ -17,7 +17,7 @@ public class NewtonsoftJsonSerializerBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var json = MakeReportLocalAsync(JsonBenchmarkLocal.Path);
+        var json = MakeReportLocalAsync(JsonBenchmark.Path);
         Console.WriteLine(json);
         Console.WriteLine();
         // This is here to maintain the same signature as the other test methods

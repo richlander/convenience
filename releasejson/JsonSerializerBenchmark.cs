@@ -21,7 +21,7 @@ public class JsonSerializerBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var json = await MakeReportLocalAsync(JsonBenchmarkLocal.Path);
+        var json = await MakeReportLocalAsync(JsonBenchmark.Path);
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;

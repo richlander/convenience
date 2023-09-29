@@ -25,7 +25,7 @@ public static class Utf8JsonReaderWriterPipelineBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var stream = await MakeReportLocalAsync(JsonBenchmarkLocal.Path);
+        var stream = await MakeReportLocalAsync(JsonBenchmark.Path);
 
         for (int i = 0; i < stream.Length; i++)
         {
