@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Runtime;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using JsonConfig;
 
 List<Benchmark> webBenchmarks =
@@ -28,6 +29,7 @@ List<Benchmark> localBenchmarks =
 ];
 
 var benchmarks = webBenchmarks;
+string target = JsonBenchmark.Url;
 
 int index = args.Length > 0 && int.TryParse(args[0], out int num) ? num : -1;
 
@@ -38,11 +40,13 @@ if (index is -1)
 else if (index > 200)
 {
     benchmarks = localBenchmarks;
+    target = JsonBenchmark.Path;
     index -= 200;
 }
 else if (index > 100)
 {
     JsonBenchmark.Url = JsonBenchmark.LocalUrl;
+    target = JsonBenchmark.Url;
     index -= 100;
 }
 
@@ -91,6 +95,8 @@ if (index >= 10)
     
     var expectedIterations = iterations - warmupIterations - (outlierSkipCount * 2);
 
+    Console.WriteLine($"Target: {target}");
+    Console.WriteLine();
     Console.WriteLine($"Total passes: {iterations}");
     Console.WriteLine($"Warmup passes: {warmupIterations}");
     Console.WriteLine($"Outlier passes ignored: {outlierSkipCount * 2}");
@@ -146,6 +152,7 @@ static async Task RunMemoryBenchmark(Benchmark benchmark)
     Console.WriteLine();
     Console.WriteLine($"Length: {length}");
     Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
+    Console.WriteLine($"Target: {JsonBenchmark.Url}");
 
     Console.WriteLine();
     Console.WriteLine($"{nameof(RuntimeInformation.OSArchitecture)}: {RuntimeInformation.OSArchitecture}");
