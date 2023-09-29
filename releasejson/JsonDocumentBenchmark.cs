@@ -8,6 +8,8 @@ namespace JsonDocumentBenchmark;
 public static class JsonDocumentBenchmark
 {
 
+    private static readonly JsonSerializerOptions OPTIONS = new() { WriteIndented = false };
+
     public static async Task<int> RunAsync()
     {
         var json = await MakeReportAsync(JsonBenchmark.Url);
@@ -32,12 +34,11 @@ public static class JsonDocumentBenchmark
         var stream = await responseMessage.Content.ReadAsStreamAsync();
 
         // Parse Json from stream
-        var doc = JsonNode.Parse(stream) ?? throw new Exception(JsonBenchmark.BADJSON);
-        var version = doc["channel-version"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
-        var supportPhase = doc["support-phase"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
-        var supported = supportPhase is "active" or "maintenance";
-        var eolDate = doc["eol-date"]?.ToString();
-        var releases = doc["releases"]?.AsArray() ?? throw new Exception(JsonBenchmark.BADJSON);
+        var doc = await JsonNode.ParseAsync(stream) ?? throw new Exception(JsonBenchmark.BADJSON);
+        var version = doc["channel-version"]?.ToString() ?? "";
+        var supported = doc["support-phase"]?.ToString() is "active" or "maintenance";
+        var eolDate = doc["eol-date"]?.ToString() ??  "";
+        var releases = doc["releases"]?.AsArray() ?? [];
         
         // Generate report
         var report = new JsonObject()
@@ -56,7 +57,7 @@ public static class JsonDocumentBenchmark
             }
         };
 
-        return report.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
+        return report.ToJsonString(OPTIONS);
     }
 
    public static async Task<string> MakeReportLocalAsync(string path)
@@ -66,11 +67,10 @@ public static class JsonDocumentBenchmark
 
         // Parse Json from stream
         var doc = await JsonNode.ParseAsync(stream) ?? throw new Exception(JsonBenchmark.BADJSON);
-        var version = doc["channel-version"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
-        var supportPhase = doc["support-phase"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
-        var supported = supportPhase is "active" or "maintenance";
-        var eolDate = doc["eol-date"]?.ToString();
-        var releases = doc["releases"]?.AsArray() ?? throw new Exception(JsonBenchmark.BADJSON);
+        var version = doc["channel-version"]?.ToString() ?? "";
+        var supported = doc["support-phase"]?.ToString() is "active" or "maintenance";
+        var eolDate = doc["eol-date"]?.ToString() ??  "";
+        var releases = doc["releases"]?.AsArray() ?? [];
         
         // Generate report
         var report = new JsonObject()
@@ -89,7 +89,7 @@ public static class JsonDocumentBenchmark
             }
         };
 
-        return report.ToJsonString(new JsonSerializerOptions { WriteIndented = false });
+        return report.ToJsonString(OPTIONS);
     }
 
     // Get first and first security release
@@ -98,12 +98,16 @@ public static class JsonDocumentBenchmark
         var securityOnly = false;
         JsonArray reportReleases = [];
 
-        foreach (var releaseVal in releases)
+        foreach (var release in releases)
         {
-            var release = releaseVal ?? throw new Exception(JsonBenchmark.BADJSON);
-            var releaseDate = release["release-date"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
-            var releaseVersion = release["release-version"]?.ToString() ?? throw new Exception(JsonBenchmark.BADJSON);
-            var securityNode = release["security"] ?? throw new Exception(JsonBenchmark.BADJSON);
+            if (release is null)
+            {
+                continue;
+            }
+
+            var releaseDate = release["release-date"]?.ToString() ?? "";
+            var releaseVersion = release["release-version"]?.ToString() ?? "";
+            var securityNode = release["security"] ?? new JsonObject();
             var security = securityNode.GetValueKind() switch 
             {
                 JsonValueKind.True => true,

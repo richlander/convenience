@@ -40,7 +40,7 @@ else if (index >= 200)
     benchmarks = localBenchmarks;
     index -= 200;
 }
-else if (index >= 100)
+else if (index > 100)
 {
     JsonBenchmark.Url = JsonBenchmarkLocal.Url;
     index -= 100;

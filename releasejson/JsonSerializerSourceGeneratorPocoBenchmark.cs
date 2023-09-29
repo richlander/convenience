@@ -27,7 +27,11 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
     {
         using HttpClient httpClient= new();
         MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
-        Report report = Report.Get(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
+        Report report = new()
+        {
+            ReportDate = DateTime.Today.ToShortDateString(), 
+            Versions = [ GetVersion(release) ]
+        };
         return JsonSerializer.Serialize(report, ReportContext.Default.Report);
     }
 
@@ -35,43 +39,48 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
     {
         using Stream stream = File.Open(path, FileMode.Open);
         MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
-        Report report = Report.Get(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
+        Report report = new()
+        {
+            ReportDate = DateTime.Today.ToShortDateString(), 
+            Versions = [ GetVersion(release) ]
+        };
         return JsonSerializer.Serialize(report, ReportContext.Default.Report);
     }
 
-    public static Version GetVersion(MajorRelease release)
-    {
-        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        bool supported = release.SupportPhase is "active" or "maintainence";
-        Version version = Version.Get(release.ChannelVersion ?? "", supported, release.EolDate ?? "Unknown", supportDays, GetReleases(release).ToList());
-        return version;
-    }
+    public static MajorVersion GetVersion(MajorRelease release) =>
+        new()
+        {
+            Version = release.ChannelVersion ?? "",
+            Supported = release.SupportPhase is "active" or "maintainence",
+            EolDate = release.EolDate ?? "",
+            SupportEndsInDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate),
+            Releases = GetReleases(release).ToList()
+        };
 
     // Get first and first security release
-    public static IEnumerable<Release> GetReleases(MajorRelease release)
+    public static IEnumerable<PatchRelease> GetReleases(MajorRelease majorRelease)
     {
         bool securityOnly = false;
         
-        ArgumentNullException.ThrowIfNull(release.Releases);
+        ArgumentNullException.ThrowIfNull(majorRelease.Releases);
 
-        foreach (ReleaseDetail releaseDetail in release.Releases)
+        foreach (Release release in majorRelease.Releases)
         {
-            if (securityOnly && !releaseDetail.Security)
+            if (securityOnly && !release.Security)
             {
                 continue;
             }
-
-            if (releaseDetail.ReleaseVersion is null ||
-                releaseDetail.ReleaseDate is null ||
-                releaseDetail.Cves is null)
-            {
-                throw new Exception(JsonBenchmark.BADJSON);
-            }
             
-            var reportRelease = Release.Get(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
-            yield return reportRelease;
+            yield return new()
+            {
+                ReleaseVersion = release.ReleaseVersion,
+                Security = release.Security,
+                ReleaseDate = release.ReleaseDate,
+                ReleasedDaysAgo = GetDaysAgo(release.ReleaseDate, true),
+                CveList = release.CveList
+            };
 
-            if (releaseDetail.Security)
+            if (release.Security)
             {
                 yield break;
             }
@@ -84,7 +93,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
         yield break;
     }
    
-    static int GetDaysAgo(string date, bool positiveNumber = false)
+    static int GetDaysAgo(string? date, bool positiveNumber = false)
     {
         bool success = DateTime.TryParse(date, out var day);
         var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
@@ -92,144 +101,91 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
     }
 }
 
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.KebabCaseLower)]
 [JsonSerializable(typeof(MajorRelease))]
 public partial class ReleaseContext : JsonSerializerContext
 {
 }
 
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.KebabCaseLower)]
 [JsonSerializable(typeof(Report))]
 public partial class ReportContext : JsonSerializerContext
 {
 }
 
+// releases.json
 public class MajorRelease
 {
-    [property: JsonPropertyName("channel-version")]
     public string? ChannelVersion { get; set; }
 
-    [property: JsonPropertyName("latest-release")]
     public string? LatestRelease { get; set; }
 
-    [property: JsonPropertyName("latest-release-date")]
     public string? LatestReleaseDate { get; set; }
 
-    [property: JsonPropertyName("security")]
     public bool Security { get; set; }
 
-    [property: JsonPropertyName("latest-runtime")]
     public string? LatestRuntime { get; set; }
 
-    [property: JsonPropertyName("latest-sdk")]
     public string? LatestSdk { get; set; }
 
-    [property: JsonPropertyName("release-type")]
     public string? ReleaseType { get; set; }
 
-    [property: JsonPropertyName("support-phase")]
     public string? SupportPhase { get; set; }
 
-    [property: JsonPropertyName("eol-date")]
     public string? EolDate { get; set; }
 
-    [property: JsonPropertyName("releases.json")]
-    public string? ReleasesJson { get; set; }
-
-    [property: JsonPropertyName("releases")]
-    public List<ReleaseDetail>? Releases { get; set; }
-}
-
-public class ReleaseDetail
-{
-    [property: JsonPropertyName("release-date")]
-    public string? ReleaseDate { get; set; } 
-    
-    [property: JsonPropertyName("release-version")]
-    public string? ReleaseVersion { get; set; } 
-    
-    [property: JsonPropertyName("security")]
-    public bool Security { get; set; } 
-    
-    [property: JsonPropertyName("cve-list")]
-    public List<Cve>? Cves { get; set; }
-}
-
-public class Cve
-{
-    [property: JsonPropertyName("cve-id")]
-    public string? CveId { get; set; }
-
-    [property: JsonPropertyName("cve-url")]
-    public string? CveUrl { get; set; }
-}
-
-public class Report
-{
-    [property: JsonPropertyName("report-date")]
-    public string? ReportDate { get; set; }
-
-    [property: JsonPropertyName("versions")]
-    public IList<Version>? Versions { get; set; }
-
-    public static Report Get(string reportDate, IList<Version> versions) =>
-        new()
-        {
-            ReportDate = reportDate,
-            Versions = versions
-        };
-}
-
-public class Version
-{
-    [property: JsonPropertyName("version")]
-    public string? MajorVersion { get; set; }
-    
-    [property: JsonPropertyName("supported")]
-    public bool Supported { get; set; }
-    
-    [property: JsonPropertyName("eol-date")]
-    public string? EolDate { get; set; }
-    
-    [property: JsonPropertyName("support-ends-in-days")]
-    public int SupportEndsInDays { get; set; }
-    
-    [property: JsonPropertyName("releases")]
-    public IList<Release>? Releases { get; set; }
-
-    public static Version Get(string majorVersion, bool supported, string eolDate, int SupportEndsInDays, IList<Release> releases) =>
-        new()
-        {
-            MajorVersion = majorVersion,
-            Supported = supported,
-            EolDate = eolDate,
-            SupportEndsInDays = SupportEndsInDays,
-            Releases = releases
-        };
+    public List<Release>? Releases { get; set; }
 }
 
 public class Release
 {
-    [property: JsonPropertyName("release-version")]
-    public string? BuildVersion { get; set; }
+    public string? ReleaseDate { get; set; } 
     
-    [property: JsonPropertyName("security")]
+    public string? ReleaseVersion { get; set; } 
+    
+    public bool Security { get; set; } 
+    
+    public List<Cve>? CveList { get; set; }
+}
+
+public class Cve
+{
+    public string? CveId { get; set; }
+
+    public string? CveUrl { get; set; }
+}
+
+
+// Report JSON
+public class Report
+{
+    public string? ReportDate { get; set; }
+
+    public IList<MajorVersion>? Versions { get; set; }
+}
+
+public class MajorVersion
+{
+    public string? Version { get; set; }
+    
+    public bool Supported { get; set; }
+    
+    public string? EolDate { get; set; }
+    
+    public int SupportEndsInDays { get; set; }
+    
+    public IList<PatchRelease>? Releases { get; set; }
+}
+
+public class PatchRelease
+{
+    public string? ReleaseVersion { get; set; }
+    
     public bool Security { get; set; }
     
-    [property: JsonPropertyName("release-date")]
     public string? ReleaseDate { get; set; }
     
-    [property: JsonPropertyName("released-days-ago")]
     public int ReleasedDaysAgo { get; set; }
     
-    [property: JsonPropertyName("cve-list")]
-    public IList<Cve>? Cves { get; set; }
-
-    public static Release Get(string releaseDate, int releasedDaysAgo, string buildVersion, bool security, IList<Cve> cves) => 
-        new()
-        {
-            BuildVersion = buildVersion,
-            Security = security,
-            ReleaseDate = releaseDate,
-            ReleasedDaysAgo = releasedDaysAgo,
-            Cves = cves
-        };
+    public IList<Cve>? CveList { get; set; }
 }

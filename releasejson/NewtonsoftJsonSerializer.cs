@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using JsonConfig;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace NewtonsoftJsonSerializerBenchmark;
 
@@ -59,29 +60,29 @@ public class NewtonsoftJsonSerializerBenchmark
         return JsonConvert.SerializeObject(report);
     }
 
-    public static Version GetVersion(MajorRelease release)
-    {
-        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        bool supported = release.SupportPhase is "active" or "maintainence";
-        Version version = new(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleases(release).ToList());
-        return version;
-    }
+    public static MajorVersion GetVersion(MajorRelease release) =>
+        new(release.ChannelVersion, 
+            release.SupportPhase is "active" or "maintainence", 
+            release.EolDate ?? "", 
+            release.EolDate is null ? 0 : GetDaysAgo(release.EolDate), 
+            GetReleases(release).ToList()
+            );
 
   // Get first and first security release
-    public static IEnumerable<Release> GetReleases(MajorRelease release)
+    public static IEnumerable<PatchRelease> GetReleases(MajorRelease majorRelease)
     {
         bool securityOnly = false;
         
-        foreach (ReleaseDetail releaseDetail in release.Releases)
+        foreach (Release release in majorRelease.Releases)
         {
-            if (securityOnly && !releaseDetail.Security)
+            if (securityOnly && !release.Security)
             {
                 continue;
             }
             
-            yield return new Release(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
+            yield return new(release.ReleaseDate, GetDaysAgo(release.ReleaseDate, true), release.ReleaseVersion, release.Security, release.CveList);
 
-            if (releaseDetail.Security)
+            if (release.Security)
             {
                 yield break;
             }
@@ -103,50 +104,20 @@ public class NewtonsoftJsonSerializerBenchmark
 }
 
 // releases.json
-public record MajorRelease(
-    [property: JsonProperty("channel-version")] string ChannelVersion, 
-    [property: JsonProperty("latest-release")] string LatestRelease, 
-    [property: JsonProperty("latest-release-date")] string LatestReleaseDate, 
-    [property: JsonProperty("security")] bool Security, 
-    [property: JsonProperty("latest-runtime")] string LatestRuntime, 
-    [property: JsonProperty("latest-sdk")] string LatestSdk, 
-    [property: JsonProperty("release-type")] string ReleaseType, 
-    [property: JsonProperty("support-phase")] string SupportPhase, 
-    [property: JsonProperty("eol-date")] string EolDate, 
-    [property: JsonProperty("releases.json")] string ReleasesJson, 
-    [property: JsonProperty("releases")] List<ReleaseDetail> Releases
-    );
+[JsonObject(NamingStrategyType = typeof(KebabCaseNamingStrategy))]
+public record MajorRelease(string ChannelVersion, string LatestRelease, string LatestReleaseDate, bool Security, string LatestRuntime, string LatestSdk, string ReleaseType, string SupportPhase, string EolDate, string ReleasesJson, List<Release> Releases);
 
-public record ReleaseDetail(
-    [property: JsonProperty("release-date")] string ReleaseDate, 
-    [property: JsonProperty("release-version")] string ReleaseVersion, 
-    [property: JsonProperty("security")] bool Security, 
-    [property: JsonProperty("cve-list")] List<Cve> Cves
-    );
+[JsonObject(NamingStrategyType = typeof(KebabCaseNamingStrategy))]
+public record Release(string ReleaseDate, string ReleaseVersion, bool Security, List<Cve> CveList);
 
-public record Cve(
-    [property: JsonProperty("cve-id")] string CveId,
-    [property: JsonProperty("cve-url")] string CveUrl
-    );
+[JsonObject(NamingStrategyType = typeof(KebabCaseNamingStrategy))]
+public record Cve(string CveId,string CveUrl);
 
-// Report
-public record Report(
-    [property: JsonProperty("report-date")] string ReportDate, 
-    [property: JsonProperty("versions")] IList<Version> Versions
-    );
+[JsonObject(NamingStrategyType = typeof(KebabCaseNamingStrategy))]
+public record Report(string ReportDate, IList<MajorVersion> Versions);
 
-public record Version(
-    [property: JsonProperty("version")] string MajorVersion, 
-    [property: JsonProperty("supported")] bool Supported, 
-    [property: JsonProperty("eol-date")] string EolDate, 
-    [property: JsonProperty("support-ends-in-days")] int SupportEndsInDays, 
-    [property: JsonProperty("releases")] IList<Release> Releases
-    );
+[JsonObject(NamingStrategyType = typeof(KebabCaseNamingStrategy))]
+public record MajorVersion(string Version,  bool Supported, string EolDate, int SupportEndsInDays, IList<PatchRelease> Releases);
 
-public record Release(
-    [property: JsonProperty("release-date")] string ReleaseDate, 
-    [property: JsonProperty("released-days-ago")] int ReleasedDaysAgo, 
-    [property: JsonProperty("release-version")] string BuildVersion, 
-    [property: JsonProperty("security")] bool Security, 
-    [property: JsonProperty("cve-list")] IList<Cve> Cves
-    );
+[JsonObject(NamingStrategyType = typeof(KebabCaseNamingStrategy))]
+public record PatchRelease(string ReleaseDate, int ReleasedDaysAgo,string ReleaseVersion, bool Security, IList<Cve> CveList);

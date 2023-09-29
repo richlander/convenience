@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using JsonConfig;
 using ReleaseJson;
 using ReportJson;
-using Version = ReportJson.Version;
+using MajorVersion = ReportJson.MajorVersion;
 
 namespace JsonSerializerSourceGeneratorRecordBenchmark;
 
@@ -42,30 +42,29 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
         return JsonSerializer.Serialize(report, ReportRecordContext.Default.Report);
     }
 
-    public static Version GetVersion(MajorRelease release)
-    {
-        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        bool supported = release.SupportPhase is "active" or "maintainence";
-        Version version = new(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleases(release).ToList());
-        return version;
-    }
+    public static MajorVersion GetVersion(MajorRelease release) =>
+        new(release.ChannelVersion, 
+            release.SupportPhase is "active" or "maintainence", 
+            release.EolDate ?? "", 
+            release.EolDate is null ? 0 : GetDaysAgo(release.EolDate), 
+            GetReleases(release).ToList()
+            );
 
     // Get first and first security release
-    public static IEnumerable<Release> GetReleases(MajorRelease release)
+    public static IEnumerable<PatchRelease> GetReleases(MajorRelease majorRelease)
     {
         bool securityOnly = false;
         
-        foreach (ReleaseDetail releaseDetail in release.Releases)
+        foreach (Release release in majorRelease.Releases)
         {
-            if (securityOnly && !releaseDetail.Security)
+            if (securityOnly && !release.Security)
             {
                 continue;
             }
             
-            var reportRelease = new Release(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
-            yield return reportRelease;
+            yield return new(release.ReleaseDate, GetDaysAgo(release.ReleaseDate, true), release.ReleaseVersion, release.Security, release.CveList);
 
-            if (releaseDetail.Security)
+            if (release.Security)
             {
                 yield break;
             }
@@ -86,11 +85,13 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
     }
 }
 
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.KebabCaseLower)]
 [JsonSerializable(typeof(MajorRelease))]
 public partial class ReleaseRecordContext : JsonSerializerContext
 {
 }
 
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.KebabCaseLower)]
 [JsonSerializable(typeof(Report))]
 public partial class ReportRecordContext : JsonSerializerContext
 {

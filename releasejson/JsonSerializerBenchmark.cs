@@ -2,13 +2,15 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using ReportJson;
 using ReleaseJson;
-using Version = ReportJson.Version;
+using MajorVersion = ReportJson.MajorVersion;
 using JsonConfig;
 
 namespace JsonSerializerBenchmark;
 
 public class JsonSerializerBenchmark
 {
+    private static readonly JsonSerializerOptions OPTIONS = new() { PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower };
+
     public static async Task<int> RunAsync()
     {
         var json = await MakeReportAsync(JsonBenchmark.Url);
@@ -28,42 +30,42 @@ public class JsonSerializerBenchmark
     public static async Task<string> MakeReportAsync(string url)
     {
         using HttpClient httpClient= new();
-        MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url) ?? throw new Exception(JsonBenchmark.BADJSON);
+        MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url, OPTIONS) ?? throw new Exception(JsonBenchmark.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
-        return JsonSerializer.Serialize(report);
+        return JsonSerializer.Serialize(report, OPTIONS);
     }
 
     public static async Task<string> MakeReportLocalAsync(string path)
     {
         using Stream stream = File.Open(path, FileMode.Open);
-        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream) ?? throw new Exception(JsonBenchmark.BADJSON);
+        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, OPTIONS) ?? throw new Exception(JsonBenchmark.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
-        return JsonSerializer.Serialize(report);
+        return JsonSerializer.Serialize(report, OPTIONS);
     }
 
-    public static Version GetVersion(MajorRelease release)
-    {
-        int supportDays = release.EolDate is null ? 0 : GetDaysAgo(release.EolDate);
-        bool supported = release.SupportPhase is "active" or "maintainence";
-        Version version = new(release.ChannelVersion, supported, release.EolDate ?? "Unknown", supportDays, GetReleases(release).ToList());
-        return version;
-    }
+    public static MajorVersion GetVersion(MajorRelease release) =>
+        new(release.ChannelVersion, 
+            release.SupportPhase is "active" or "maintainence", 
+            release.EolDate ?? "", 
+            release.EolDate is null ? 0 : GetDaysAgo(release.EolDate), 
+            GetReleases(release).ToList()
+            );
 
     // Get first and first security release
-    public static IEnumerable<Release> GetReleases(MajorRelease release)
+    public static IEnumerable<ReportJson.PatchRelease> GetReleases(MajorRelease majorRelease)
     {
         bool securityOnly = false;
         
-        foreach (ReleaseDetail releaseDetail in release.Releases)
+        foreach (ReleaseJson.Release release in majorRelease.Releases)
         {
-            if (securityOnly && !releaseDetail.Security)
+            if (securityOnly && !release.Security)
             {
                 continue;
             }
             
-            yield return new Release(releaseDetail.ReleaseDate, GetDaysAgo(releaseDetail.ReleaseDate, true), releaseDetail.ReleaseVersion, releaseDetail.Security, releaseDetail.Cves);
+            yield return new(release.ReleaseDate, GetDaysAgo(release.ReleaseDate, true), release.ReleaseVersion, release.Security, release.CveList);
 
-            if (releaseDetail.Security)
+            if (release.Security)
             {
                 yield break;
             }
