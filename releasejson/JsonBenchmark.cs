@@ -2,20 +2,24 @@ namespace JsonConfig;
 
 public static class JsonBenchmark
 {
-    // Real .NET 6 releases.jon
-    public const string Official = "https://raw.githubusercontent.com/dotnet/core/main/release-notes/6.0/releases.json";
     // Fake releases.json documents
     // First fake one is official file as of August 2023 (for consistent numbers)
     // The others are more fake
-    public const string FakeOfficial = "https://gist.githubusercontent.com/richlander/d690c90503469676b0f366c5f4ee2063/raw/711b3404e3a84bfea4da8c60435ac74f3785b511/releases.json";
-    public const string FakeSecurityReleaseNearEnd = "https://gist.githubusercontent.com/richlander/408cd63769ab12386729e926f25d8858/raw/064d23ace456176f67784ed80aa5ce2d5b15f333/releases.json";
-    public const string FakeSecurityReleaseAtEnd = "https://gist.githubusercontent.com/richlander/5c21d15497d153874da94ef8e1a89fc7/raw/85d5ba9abdc47dd753b3d85047f14693129dcd05/releases.json";
-    public const string FakeNoSecurityRelease = "https://gist.githubusercontent.com/richlander/e7f1d03e0cea76539325dcc07a8f48df/raw/e05494f2c7e10715dfcd0cdcc2dc1fbd7cb89219/releases.json";
-    public const string FakeMetadataOnly = "https://gist.githubusercontent.com/richlander/ce8e5fd8c29a8722f6cb9d3d3bb7fb55/raw/2dc0d16a6272851c59ba3db6e23779b6518b22a1/releases.json";
-    public const string FakeOneReleaseOnly = "https://gist.githubusercontent.com/richlander/f965ba65696efb6187c727c0e3e9f7dc/raw/277eee6c6b545e6cc66a50061f5f2ad2170ae69c/releases.json";
+    public const string FakeOfficial = "fake-releases.json";
+    public const string FakeSecurityReleaseNearEnd ="fake-release-near-end.json";
+    public const string FakeSecurityReleaseAtEnd = "fake-release-at-end.json";
+    public const string FakeNoSecurityRelease = "fake-no-security-release.json";
+    public const string FakeMetadataOnly = "fake-metadata-only.json";
+    public const string FakeOneReleaseOnly = "fake-one-release-only.json";
+    public const string LocalHost = "http://localhost:5255/";
+    public const string RemoteHost = "https://raw.githubusercontent.com/richlander/convenience/json/releasejson/releasejson/";
+    public static string File { get; set; } = FakeOfficial;
+    public static string Path => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(typeof(JsonBenchmark).Assembly.Location) ?? throw new Exception("Directory not found"), "releasejson", File);
+    public static string LocalUrl => $"{LocalHost}{File}";
+    public static string RemoteUrl => $"{RemoteHost}{File}";
     public const string BADJSON = "JSON data is wrong";
     public const string BADJSONREAD = "Cannot read JSON data.";
     public const string JSONOUTOFORDER = "JSON is bring read out of order";
 
-    public static string Url { get; set; } = FakeOfficial;
+    public static string Url { get; set; } = RemoteUrl;
 }
