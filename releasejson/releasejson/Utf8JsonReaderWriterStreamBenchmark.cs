@@ -1,18 +1,18 @@
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using JsonConfig;
 using JsonReaders;
 using JsonExtensions;
-using System.IO.Pipelines;
-using System.Runtime.CompilerServices;
 
-namespace Utf8JsonReaderWriterPipelineBenchmark;
 
-public static class Utf8JsonReaderWriterPipelineBenchmark
+namespace Utf8JsonReaderWriterStreamBenchmark;
+
+public static class Utf8JsonReaderWriterStreamBenchmark
 {
     public static async Task<int> RunAsync()
     {
-        var stream = await MakeReportAsync(JsonBenchmark.Url);
+        var stream = await MakeReportAsync(BenchmarkData.Url);
 
         for (int i = 0; i < stream.Length; i++)
         {
@@ -25,7 +25,7 @@ public static class Utf8JsonReaderWriterPipelineBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var stream = await MakeReportLocalAsync(JsonBenchmark.Path);
+        var stream = await MakeReportLocalAsync(BenchmarkData.Path);
 
         for (int i = 0; i < stream.Length; i++)
         {
@@ -41,30 +41,24 @@ public static class Utf8JsonReaderWriterPipelineBenchmark
         // Make network call
         using var httpClient = new HttpClient();
         using var releaseMessage = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
-        var stream = await releaseMessage.Content.ReadAsStreamAsync();
+        releaseMessage.EnsureSuccessStatusCode();
+        using var jsonStream = await releaseMessage.Content.ReadAsStreamAsync();
 
-        // Attach stream to Pipe
-        var pipe = new Pipe();
-        var reader = pipe.Reader;
-        _ = CopyToWriter(pipe, stream);
-        var result = await reader.ReadAsync();
+        // Acquire byte[] as a buffer for the Stream 
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(JsonStreamReader.Size);
+        int read = await jsonStream.ReadAsync(rentedArray);
 
         // Process JSON
-        var releasesReader = new ReleasesJsonReader(new(reader, result));
+        var releasesReader = new ReleasesJsonReader(new(jsonStream, rentedArray, read));
         var memory = new MemoryStream();
         var reportWriter = new ReportJsonWriter(releasesReader, memory);
         await reportWriter.Write();
+        ArrayPool<byte>.Shared.Return(rentedArray);
 
         // Flush stream and prepare for reader
         memory.Flush();
         memory.Position= 0;
         return memory;
-
-        static async Task CopyToWriter(Pipe pipe, Stream release)
-        {
-            await release.CopyToAsync(pipe.Writer);
-            pipe.Writer.Complete();
-        }
     }
 
     public static async Task<Stream> MakeReportLocalAsync(string path)
@@ -72,30 +66,25 @@ public static class Utf8JsonReaderWriterPipelineBenchmark
         // Local local file
         using Stream stream = File.Open(path, FileMode.Open);
 
-        // Attach stream to Pipe
-        var pipe = new Pipe();
-        var reader = pipe.Reader;
-        _ = CopyToWriter(pipe, stream);
-        var result = await reader.ReadAsync();
+        // Acquire byte[] as a buffer for the Stream 
+        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(JsonStreamReader.Size);
+        int read = await stream.ReadAsync(rentedArray);
 
         // Process JSON
-        var releasesReader = new ReleasesJsonReader(new(reader, result));
+        var releasesReader = new ReleasesJsonReader(new(stream, rentedArray, read));
         var memory = new MemoryStream();
         var reportWriter = new ReportJsonWriter(releasesReader, memory);
         await reportWriter.Write();
+        ArrayPool<byte>.Shared.Return(rentedArray);
 
         // Flush stream and prepare for reader
         memory.Flush();
         memory.Position= 0;
         return memory;
-
-        static async Task CopyToWriter(Pipe pipe, Stream release)
-        {
-            await release.CopyToAsync(pipe.Writer);
-            pipe.Writer.Complete();
-        }
     }
 }
+
+
 
 public class ReportJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
 {
@@ -180,9 +169,9 @@ public class ReportJsonWriter(ReleasesJsonReader releasesReader, Stream memory)
     }
 }
 
-public class ReleasesJsonReader(JsonPipeReader reader)
+public class ReleasesJsonReader(JsonStreamReader reader)
 {
-    private readonly JsonPipeReader _json = reader;
+    private readonly JsonStreamReader _json = reader;
     private ParseState _parseState = ParseState.None;
 
     public async Task<Version> GetVersionAsync()
@@ -239,7 +228,7 @@ public class ReleasesJsonReader(JsonPipeReader reader)
                 if (string.IsNullOrEmpty(channel) ||
                 string.IsNullOrEmpty(support))
                 {                
-                    throw new Exception(JsonBenchmark.BADJSON);
+                    throw new Exception(BenchmarkData.BADJSON);
                 }
 
 
@@ -249,7 +238,7 @@ public class ReleasesJsonReader(JsonPipeReader reader)
 
                 if (channel is null)
                 {
-                    throw new Exception(JsonBenchmark.BADJSON);
+                    throw new Exception(BenchmarkData.BADJSON);
                 }
 
                 _json.UpdateState(reader);
@@ -258,7 +247,7 @@ public class ReleasesJsonReader(JsonPipeReader reader)
             }
         }
 
-        throw new Exception(JsonBenchmark.BADJSONREAD);
+        throw new Exception(BenchmarkData.BADJSONREAD);
     }
 
     public async IAsyncEnumerable<Release> GetReleasesAsync()
@@ -397,7 +386,7 @@ public class ReleasesJsonReader(JsonPipeReader reader)
                 if (string.IsNullOrEmpty(releaseVersion) ||
                     string.IsNullOrEmpty(releaseDate))
                     {                   
-                        throw new Exception(JsonBenchmark.BADJSON);
+                        throw new Exception(BenchmarkData.BADJSON);
                     }
 
                 var releaseDaysAgo = GetDaysAgo(releaseDate, true);
@@ -408,7 +397,7 @@ public class ReleasesJsonReader(JsonPipeReader reader)
             }
         }
 
-        throw new Exception(JsonBenchmark.BADJSONREAD);
+        throw new Exception(BenchmarkData.BADJSONREAD);
     }
 
     private async IAsyncEnumerable<Cve> GetCvesAsync()
@@ -458,7 +447,7 @@ public class ReleasesJsonReader(JsonPipeReader reader)
                 if (string.IsNullOrEmpty(cveUrl) ||
                     string.IsNullOrEmpty(cveId))
                 {                    
-                    throw new Exception(JsonBenchmark.BADJSON);
+                    throw new Exception(BenchmarkData.BADJSON);
                 }
 
                 cve = new Cve(cveId, cveUrl);
@@ -474,7 +463,7 @@ public class ReleasesJsonReader(JsonPipeReader reader)
     {
         ParseState e when e == _parseState => true,
         ParseState e when e > _parseState => false,
-        _ => throw new Exception(JsonBenchmark.JSONOUTOFORDER)
+        _ => throw new Exception(BenchmarkData.JSONOUTOFORDER)
     };
 
     private static int GetDaysAgo(string date, bool positiveNumber = false)

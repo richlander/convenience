@@ -9,7 +9,7 @@ public class NewtonsoftJsonSerializerBenchmark
 {
     public static async Task<int> RunAsync()
     {
-        var json = await MakeReportAsync(JsonBenchmark.Url);
+        var json = await MakeReportAsync(BenchmarkData.Url);
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
@@ -17,7 +17,7 @@ public class NewtonsoftJsonSerializerBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var json = MakeReportLocalAsync(JsonBenchmark.Path);
+        var json = MakeReportLocalAsync(BenchmarkData.Path);
         Console.WriteLine(json);
         Console.WriteLine();
         // This is here to maintain the same signature as the other test methods

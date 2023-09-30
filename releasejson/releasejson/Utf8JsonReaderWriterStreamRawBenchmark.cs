@@ -11,7 +11,7 @@ public static class Utf8JsonReaderWriterStreamRawBenchmark
 {
     public static async Task<int> RunAsync()
     {
-        var stream = await MakeReportAsync(JsonBenchmark.Url);
+        var stream = await MakeReportAsync(BenchmarkData.Url);
 
         for (int i = 0; i < stream.Length; i++)
         {
@@ -24,7 +24,7 @@ public static class Utf8JsonReaderWriterStreamRawBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var stream = await MakeReportLocalAsync(JsonBenchmark.Path);
+        var stream = await MakeReportLocalAsync(BenchmarkData.Path);
 
         for (int i = 0; i < stream.Length; i++)
         {
@@ -276,7 +276,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
             {
                 _writer.WritePropertyName(reader.GetValueSpan());
                 reader.Read();
-                var date = reader.GetString() ?? throw new Exception(JsonBenchmark.BADJSON);
+                var date = reader.GetString() ?? throw new Exception(BenchmarkData.BADJSON);
                 _writer.WriteStringValue(date);
                 var days = GetDaysAgo(date, true);
                 _writer.WriteNumber("released-days-ago"u8, days);
@@ -304,7 +304,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
             return false;
         }
 
-        throw new Exception(JsonBenchmark.BADJSONREAD);
+        throw new Exception(BenchmarkData.BADJSONREAD);
     }
 
     public void WriteCveEmpty()

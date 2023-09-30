@@ -1,18 +1,19 @@
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using JsonConfig;
-using ReleaseJson;
 using ReportJson;
+using ReleaseJson;
 using MajorVersion = ReportJson.MajorVersion;
+using JsonConfig;
 
-namespace JsonSerializerSourceGeneratorRecordBenchmark;
+namespace JsonSerializerBenchmark;
 
-public static class JsonSerializerSourceGeneratorRecordBenchmark
+public class JsonSerializerBenchmark
 {
+    private static readonly JsonSerializerOptions OPTIONS = new() { PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower };
+
     public static async Task<int> RunAsync()
     {
-        var json = await MakeReportAsync(JsonBenchmark.Url);
+        var json = await MakeReportAsync(BenchmarkData.Url);
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
@@ -20,7 +21,7 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var json = await MakeReportLocalAsync(JsonBenchmark.Path);
+        var json = await MakeReportLocalAsync(BenchmarkData.Path);
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
@@ -29,17 +30,17 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
     public static async Task<string> MakeReportAsync(string url)
     {
         using HttpClient httpClient= new();
-        var release = await httpClient.GetFromJsonAsync<MajorRelease>(url, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
+        MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url, OPTIONS) ?? throw new Exception(BenchmarkData.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
-        return JsonSerializer.Serialize(report, ReportRecordContext.Default.Report);
+        return JsonSerializer.Serialize(report, OPTIONS);
     }
 
     public static async Task<string> MakeReportLocalAsync(string path)
     {
         using Stream stream = File.Open(path, FileMode.Open);
-        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
+        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, OPTIONS) ?? throw new Exception(BenchmarkData.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
-        return JsonSerializer.Serialize(report, ReportRecordContext.Default.Report);
+        return JsonSerializer.Serialize(report, OPTIONS);
     }
 
     public static MajorVersion GetVersion(MajorRelease release) =>
@@ -51,11 +52,11 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
             );
 
     // Get first and first security release
-    public static IEnumerable<PatchRelease> GetReleases(MajorRelease majorRelease)
+    public static IEnumerable<ReportJson.PatchRelease> GetReleases(MajorRelease majorRelease)
     {
         bool securityOnly = false;
         
-        foreach (Release release in majorRelease.Releases)
+        foreach (ReleaseJson.Release release in majorRelease.Releases)
         {
             if (securityOnly && !release.Security)
             {
@@ -83,16 +84,4 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
         var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
         return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
     }
-}
-
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.KebabCaseLower)]
-[JsonSerializable(typeof(MajorRelease))]
-public partial class ReleaseRecordContext : JsonSerializerContext
-{
-}
-
-[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.KebabCaseLower)]
-[JsonSerializable(typeof(Report))]
-public partial class ReportRecordContext : JsonSerializerContext
-{
 }

@@ -9,7 +9,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
 {
     public static async Task<int> RunAsync()
     {
-        var json = await MakeReportAsync(JsonBenchmark.Url);
+        var json = await MakeReportAsync(BenchmarkData.Url);
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
@@ -17,7 +17,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
 
     public static async Task<int> RunLocalAsync()
     {
-        var json = await MakeReportLocalAsync(JsonBenchmark.Path);
+        var json = await MakeReportLocalAsync(BenchmarkData.Path);
         Console.WriteLine(json);
         Console.WriteLine();
         return json.Length;
@@ -26,7 +26,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
     public static async Task<string> MakeReportAsync(string url)
     {
         using HttpClient httpClient= new();
-        MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
+        MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url, ReleaseContext.Default.MajorRelease) ?? throw new Exception(BenchmarkData.BADJSON);
         Report report = new()
         {
             ReportDate = DateTime.Today.ToShortDateString(), 
@@ -38,7 +38,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
     public static async Task<string> MakeReportLocalAsync(string path)
     {
         using Stream stream = File.Open(path, FileMode.Open);
-        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseContext.Default.MajorRelease) ?? throw new Exception(JsonBenchmark.BADJSON);
+        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseContext.Default.MajorRelease) ?? throw new Exception(BenchmarkData.BADJSON);
         Report report = new()
         {
             ReportDate = DateTime.Today.ToShortDateString(), 

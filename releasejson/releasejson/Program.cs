@@ -29,7 +29,7 @@ List<Benchmark> localBenchmarks =
 ];
 
 var benchmarks = webBenchmarks;
-string target = JsonBenchmark.Url;
+string target = BenchmarkData.Url;
 
 int index = args.Length > 0 && int.TryParse(args[0], out int num) ? num : -1;
 
@@ -40,13 +40,13 @@ if (index is -1)
 else if (index > 200)
 {
     benchmarks = localBenchmarks;
-    target = JsonBenchmark.Path;
+    target = BenchmarkData.Path;
     index -= 200;
 }
 else if (index > 100)
 {
-    JsonBenchmark.Url = JsonBenchmark.LocalUrl;
-    target = JsonBenchmark.Url;
+    BenchmarkData.Url = BenchmarkData.LocalUrl;
+    target = BenchmarkData.Url;
     index -= 100;
 }
 
@@ -152,7 +152,7 @@ static async Task RunMemoryBenchmark(Benchmark benchmark)
     Console.WriteLine();
     Console.WriteLine($"Length: {length}");
     Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds}");
-    Console.WriteLine($"Target: {JsonBenchmark.Url}");
+    Console.WriteLine($"Target: {BenchmarkData.Url}");
 
     Console.WriteLine();
     Console.WriteLine($"{nameof(RuntimeInformation.OSArchitecture)}: {RuntimeInformation.OSArchitecture}");

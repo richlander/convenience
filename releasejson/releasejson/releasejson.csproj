@@ -14,7 +14,7 @@
   </ItemGroup>
 
     <ItemGroup>
-    <None Include="releasejson/*.json">
+    <None Include="../fakejson/*.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
