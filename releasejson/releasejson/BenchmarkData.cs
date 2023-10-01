@@ -15,10 +15,10 @@ public static class BenchmarkData
     public const string FakeSecurityReleaseNearEnd ="fake-release-near-end.json";
     public const string FakeSecurityReleaseAtEnd = "fake-release-at-end.json";
     public const string FakeNoSecurityRelease = "fake-no-security-release.json";
-    public const string FakeMetadataOnly = "fake-metadata-only.json";
+    public const string FakeCompact = "fake-releases-compact.json";
     public const string FakeOneReleaseOnly = "fake-one-release-only.json";
     public const string LocalHost = "http://localhost:5255/";
-    public const string RemoteHost = "https://raw.githubusercontent.com/richlander/convenience/json/releasejson/releasejson/";
+    public const string RemoteHost = "https://raw.githubusercontent.com/richlander/convenience/json/releasejson/fakejson/";
 
     public static string File { get; set; } = FakeOfficial;
 

@@ -19,7 +19,7 @@ The app takes a single integer value as input, such as `dotnet run -c Release --
 - `0`-`7` -- Runs a specific benchmark, and collects memory use information. Elapsed time is also provided, but isn't a useful number, since JIT cost is dominant
 - `>= 10` -- Runs all the benchmarks n times, using a web URL.
 - `100` -- Runs all the benchmarks once, using a web URL.
-- `> 100` -- Runs all the benchmarks n times, using a local URL.
+- `> 100` -- Runs all the benchmarks n times, using a local URL (need to start the [webserver](../fakejsonweb) first).
 - `> 200` -- Runs all the benchmarks n times, using a local file.
 
 The file chosen to process can be changed in [`BenchmarkData.cs`](BenchmarkData.cs).
