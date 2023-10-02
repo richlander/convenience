@@ -7,26 +7,10 @@ namespace JsonDocumentBenchmark;
 
 public static class JsonDocumentBenchmark
 {
-
     private static readonly JsonSerializerOptions OPTIONS = new() { WriteIndented = false };
 
-    public static async Task<int> RunAsync()
-    {
-        var json = await MakeReportAsync(BenchmarkData.Url);
-        Console.WriteLine(json);
-        Console.WriteLine();
-        return json.Length;
-    }
-
-    public static async Task<int> RunLocalAsync()
-    {
-        var json = await MakeReportLocalAsync(BenchmarkData.Path);
-        Console.WriteLine(json);
-        Console.WriteLine();
-        return json.Length;
-    }
-
-    public static async Task<string> MakeReportAsync(string url)
+    // Benchmark for JSON via Web URL
+    public static async Task<int> MakeReportAsync(string url)
     {
         // Make network call
         var httpClient = new HttpClient();
@@ -57,10 +41,13 @@ public static class JsonDocumentBenchmark
             }
         };
 
-        return report.ToJsonString(OPTIONS);
+        string reportJson = report.ToJsonString(OPTIONS);
+        WriteJsonToConsole(reportJson);
+        return reportJson.Length;
     }
 
-   public static async Task<string> MakeReportLocalAsync(string path)
+    // Benchmark for JSON via file
+   public static async Task<int> MakeReportFileAsync(string path)
     {
         // Local local file
         using Stream stream = File.Open(path, FileMode.Open);
@@ -89,7 +76,9 @@ public static class JsonDocumentBenchmark
             }
         };
 
-        return report.ToJsonString(OPTIONS);
+        string reportJson = report.ToJsonString(OPTIONS);
+        WriteJsonToConsole(reportJson);
+        return reportJson.Length;
     }
 
     // Get first and first security release
@@ -151,5 +140,13 @@ public static class JsonDocumentBenchmark
         bool success = DateTime.TryParse(date, out var day);
         var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
         return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
+    }
+
+    static void WriteJsonToConsole(string json)
+    {
+#if DEBUG
+        Console.WriteLine(json);
+        Console.WriteLine();
+#endif
     }
 }

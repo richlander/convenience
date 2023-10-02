@@ -7,26 +7,7 @@ namespace NewtonsoftJsonSerializerBenchmark;
 
 public class NewtonsoftJsonSerializerBenchmark
 {
-    public static async Task<int> RunAsync()
-    {
-        var json = await MakeReportAsync(BenchmarkData.Url);
-        Console.WriteLine(json);
-        Console.WriteLine();
-        return json.Length;
-    }
-
-    public static async Task<int> RunLocalAsync()
-    {
-        var json = MakeReportLocalAsync(BenchmarkData.Path);
-        Console.WriteLine(json);
-        Console.WriteLine();
-        // This is here to maintain the same signature as the other test methods
-        // Because Json.NET doesn't have an async serializer
-        await Task.CompletedTask;
-        return json.Length;
-    }
-
-    public static async Task<string> MakeReportAsync(string url)
+    public static async Task<int> MakeReportWebAsync(string url)
     {
         // Make network call
         using var httpClient = new HttpClient();
@@ -41,10 +22,12 @@ public class NewtonsoftJsonSerializerBenchmark
         // Process JSON
         MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception();
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
-        return JsonConvert.SerializeObject(report);
+        string reportJson = JsonConvert.SerializeObject(report);
+        WriteJsonToConsole(reportJson);
+        return reportJson.Length;
     }
 
-    public static string MakeReportLocalAsync(string file)
+    public static int MakeReportFile(string file)
     {
         // Local local file
         using Stream stream = File.Open(file, FileMode.Open);
@@ -57,7 +40,9 @@ public class NewtonsoftJsonSerializerBenchmark
         // Process JSON
         MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception();
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
-        return JsonConvert.SerializeObject(report);
+        string reportJson = JsonConvert.SerializeObject(report);
+        WriteJsonToConsole(reportJson);
+        return reportJson.Length;
     }
 
     public static MajorVersion GetVersion(MajorRelease release) =>
@@ -68,7 +53,7 @@ public class NewtonsoftJsonSerializerBenchmark
             GetReleases(release).ToList()
             );
 
-  // Get first and first security release
+    // Get first and first security release
     public static IEnumerable<PatchRelease> GetReleases(MajorRelease majorRelease)
     {
         bool securityOnly = false;
@@ -100,6 +85,14 @@ public class NewtonsoftJsonSerializerBenchmark
         bool success = DateTime.TryParse(date, out var day);
         var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
         return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
+    }
+
+    static void WriteJsonToConsole(string json)
+    {
+#if DEBUG
+        Console.WriteLine(json);
+        Console.WriteLine();
+#endif
     }
 }
 

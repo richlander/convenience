@@ -9,34 +9,7 @@ namespace Utf8JsonReaderWriterStreamRawBenchmark;
 
 public static class Utf8JsonReaderWriterStreamRawBenchmark
 {
-    public static async Task<int> RunAsync()
-    {
-        var stream = await MakeReportAsync(BenchmarkData.Url);
-
-        for (int i = 0; i < stream.Length; i++)
-        {
-            Console.Write((char)stream.ReadByte());
-        }
-
-        Console.WriteLine();
-        return (int)stream.Length;
-    }
-
-    public static async Task<int> RunLocalAsync()
-    {
-        var stream = await MakeReportLocalAsync(BenchmarkData.Path);
-
-        for (int i = 0; i < stream.Length; i++)
-        {
-            Console.Write((char)stream.ReadByte());
-        }
-
-        Console.WriteLine();
-        return (int)stream.Length;
-    }
-
-
-    public static async Task<Stream> MakeReportAsync(string url)
+    public static async Task<int> MakeReportWebAsync(string url)
     {
         // Make network call
         using var httpClient = new HttpClient();
@@ -56,10 +29,12 @@ public static class Utf8JsonReaderWriterStreamRawBenchmark
         // Flush stream and prepare for reader
         memory.Flush();
         memory.Position= 0;
-        return memory;
+
+        WriteJsonToConsole(memory);
+        return (int)memory.Length;
     }
 
-    public static async Task<Stream> MakeReportLocalAsync(string path)
+    public static async Task<int> MakeReportFileAsync(string path)
     {
         // Local local file
         using Stream stream = File.Open(path, FileMode.Open);
@@ -77,7 +52,21 @@ public static class Utf8JsonReaderWriterStreamRawBenchmark
         // Flush stream and prepare for reader
         memory.Flush();
         memory.Position= 0;
-        return memory;
+
+        WriteJsonToConsole(memory);
+        return (int)memory.Length;
+    }
+
+    public static void WriteJsonToConsole(Stream stream)
+    {
+#if DEBUG
+        for (int i = 0; i < stream.Length; i++)
+        {
+            Console.Write((char)stream.ReadByte());
+        }
+
+        Console.WriteLine();
+#endif
     }
 }
 

@@ -11,36 +11,36 @@ public class JsonSerializerBenchmark
 {
     private static readonly JsonSerializerOptions OPTIONS = new() { PropertyNamingPolicy = JsonNamingPolicy.KebabCaseLower };
 
-    public static async Task<int> RunAsync()
-    {
-        var json = await MakeReportAsync(BenchmarkData.Url);
-        Console.WriteLine(json);
-        Console.WriteLine();
-        return json.Length;
-    }
-
-    public static async Task<int> RunLocalAsync()
-    {
-        var json = await MakeReportLocalAsync(BenchmarkData.Path);
-        Console.WriteLine(json);
-        Console.WriteLine();
-        return json.Length;
-    }
-
-    public static async Task<string> MakeReportAsync(string url)
+    // Benchmark for JSON via Web URL
+    public static async Task<int> MakeReportWebAsync(string url)
     {
         using HttpClient httpClient= new();
         MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url, OPTIONS) ?? throw new Exception(BenchmarkData.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
-        return JsonSerializer.Serialize(report, OPTIONS);
+        string reportJson =  JsonSerializer.Serialize(report, OPTIONS);
+        WriteJsonToConsole(reportJson);
+        return reportJson.Length;
     }
 
-    public static async Task<string> MakeReportLocalAsync(string path)
+    // Benchmark for JSON via file
+    public static async Task<int> MakeReportFileAsync(string path)
     {
         using Stream stream = File.Open(path, FileMode.Open);
         MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, OPTIONS) ?? throw new Exception(BenchmarkData.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
-        return JsonSerializer.Serialize(report, OPTIONS);
+        string reportJson =  JsonSerializer.Serialize(report, OPTIONS);
+        WriteJsonToConsole(reportJson);
+        return reportJson.Length;
+    }
+
+    // Benchmark for JSON via string
+    public static int MakeReportMemory(string json)
+    {
+        MajorRelease release = JsonSerializer.Deserialize<MajorRelease>(json, OPTIONS)!;
+        Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
+        string reportJson =  JsonSerializer.Serialize(report, OPTIONS);
+        WriteJsonToConsole(reportJson);
+        return reportJson.Length;
     }
 
     public static MajorVersion GetVersion(MajorRelease release) =>
@@ -83,5 +83,13 @@ public class JsonSerializerBenchmark
         bool success = DateTime.TryParse(date, out var day);
         var daysAgo = success ? (int)(day - DateTime.Now).TotalDays : 0;
         return positiveNumber ? Math.Abs(daysAgo) : daysAgo;
+    }
+
+    static void WriteJsonToConsole(string json)
+    {
+#if DEBUG
+        Console.WriteLine(json);
+        Console.WriteLine();
+#endif
     }
 }
