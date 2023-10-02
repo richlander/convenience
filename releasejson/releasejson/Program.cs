@@ -24,7 +24,7 @@ else if (count > 300)
     benchmarks = Benchmark.MemoryBenchmarks;
     target = Benchmark.Path;
     targetJson = File.ReadAllText(target);
-    count -= 200;
+    count -= 300;
 }
 else if (count > 200)
 {
@@ -105,7 +105,8 @@ if (count >= 10)
     
     var expectedIterations = iterations - warmupIterations - (outlierSkipCount * 2);
 
-    Console.WriteLine("JSON:");
+    string kind = targetJson.Length > 0 ? " (string)" : "";
+    Console.WriteLine($"JSON{kind}:");
     Console.WriteLine(target);
     Console.WriteLine();
     Console.WriteLine($"Total passes: {iterations}");
