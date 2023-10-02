@@ -1,6 +1,6 @@
 using System.Buffers;
 using System.Text.Json;
-using JsonConfig;
+using JsonBenchmark;
 using JsonReaders;
 using JsonExtensions;
 
@@ -265,7 +265,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
             {
                 _writer.WritePropertyName(reader.GetValueSpan());
                 reader.Read();
-                var date = reader.GetString() ?? throw new Exception(BenchmarkData.BADJSON);
+                var date = reader.GetString() ?? throw new Exception(Error.BADJSON);
                 _writer.WriteStringValue(date);
                 var days = GetDaysAgo(date, true);
                 _writer.WriteNumber("released-days-ago"u8, days);
@@ -293,7 +293,7 @@ public class ReleasesJsonReaderReportWriter(Stream stream, byte[] buffer, int re
             return false;
         }
 
-        throw new Exception(BenchmarkData.BADJSONREAD);
+        throw new Exception(Error.BADJSONREAD);
     }
 
     public void WriteCveEmpty()

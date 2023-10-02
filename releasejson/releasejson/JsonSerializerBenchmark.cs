@@ -1,9 +1,8 @@
 using System.Net.Http.Json;
 using System.Text.Json;
+using JsonBenchmark;
 using ReportJson;
 using ReleaseJson;
-using MajorVersion = ReportJson.MajorVersion;
-using JsonConfig;
 
 namespace JsonSerializerBenchmark;
 
@@ -15,7 +14,7 @@ public class JsonSerializerBenchmark
     public static async Task<int> MakeReportWebAsync(string url)
     {
         using HttpClient httpClient= new();
-        MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url, OPTIONS) ?? throw new Exception(BenchmarkData.BADJSON);
+        MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url, OPTIONS) ?? throw new Exception(Error.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         string reportJson =  JsonSerializer.Serialize(report, OPTIONS);
         WriteJsonToConsole(reportJson);
@@ -26,7 +25,7 @@ public class JsonSerializerBenchmark
     public static async Task<int> MakeReportFileAsync(string path)
     {
         using Stream stream = File.Open(path, FileMode.Open);
-        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, OPTIONS) ?? throw new Exception(BenchmarkData.BADJSON);
+        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, OPTIONS) ?? throw new Exception(Error.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         string reportJson =  JsonSerializer.Serialize(report, OPTIONS);
         WriteJsonToConsole(reportJson);

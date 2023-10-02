@@ -1,11 +1,9 @@
-using System.Dynamic;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using JsonConfig;
+using JsonBenchmark;
 using ReleaseJson;
 using ReportJson;
-using MajorVersion = ReportJson.MajorVersion;
 
 namespace JsonSerializerSourceGeneratorRecordBenchmark;
 
@@ -15,7 +13,7 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
     public static async Task<int> MakeReportWebAsync(string url)
     {
         using HttpClient httpClient= new();
-        var release = await httpClient.GetFromJsonAsync<MajorRelease>(url, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(BenchmarkData.BADJSON);
+        var release = await httpClient.GetFromJsonAsync(url, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(Error.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         string reportJson = JsonSerializer.Serialize(report, ReportRecordContext.Default.Report);
         WriteJsonToConsole(reportJson);
@@ -26,7 +24,7 @@ public static class JsonSerializerSourceGeneratorRecordBenchmark
     public static async Task<int> MakeReportFileAsync(string path)
     {
         using Stream stream = File.Open(path, FileMode.Open);
-        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(BenchmarkData.BADJSON);
+        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseRecordContext.Default.MajorRelease) ?? throw new Exception(Error.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         string reportJson = JsonSerializer.Serialize(report, ReportRecordContext.Default.Report);
         WriteJsonToConsole(reportJson);

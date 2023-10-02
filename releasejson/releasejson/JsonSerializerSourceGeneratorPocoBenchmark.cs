@@ -1,7 +1,7 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using JsonConfig;
+using JsonBenchmark;
 
 namespace JsonSerializerSourceGeneratorPocoBenchmark;
 
@@ -11,7 +11,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
     public static async Task<int> MakeReportWebAsync(string url)
     {
         using HttpClient httpClient= new();
-        MajorRelease release = await httpClient.GetFromJsonAsync<MajorRelease>(url, ReleaseContext.Default.MajorRelease) ?? throw new Exception(BenchmarkData.BADJSON);
+        MajorRelease release = await httpClient.GetFromJsonAsync(url, ReleaseContext.Default.MajorRelease) ?? throw new Exception(Error.BADJSON);
         Report report = new()
         {
             ReportDate = DateTime.Today.ToShortDateString(), 
@@ -26,7 +26,7 @@ public static class JsonSerializerSourceGeneratorPocoBenchmark
     public static async Task<int> MakeReportFileAsync(string path)
     {
         using Stream stream = File.Open(path, FileMode.Open);
-        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseContext.Default.MajorRelease) ?? throw new Exception(BenchmarkData.BADJSON);
+        MajorRelease release = await JsonSerializer.DeserializeAsync<MajorRelease>(stream, ReleaseContext.Default.MajorRelease) ?? throw new Exception(Error.BADJSON);
         Report report = new()
         {
             ReportDate = DateTime.Today.ToShortDateString(), 

@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using JsonConfig;
+using JsonBenchmark;
 using JsonReaders;
 using JsonExtensions;
 
@@ -218,7 +218,7 @@ public class ReleasesJsonReader(JsonStreamReader reader)
                 if (string.IsNullOrEmpty(channel) ||
                 string.IsNullOrEmpty(support))
                 {                
-                    throw new Exception(BenchmarkData.BADJSON);
+                    throw new Exception(Error.BADJSON);
                 }
 
 
@@ -228,7 +228,7 @@ public class ReleasesJsonReader(JsonStreamReader reader)
 
                 if (channel is null)
                 {
-                    throw new Exception(BenchmarkData.BADJSON);
+                    throw new Exception(Error.BADJSON);
                 }
 
                 _json.UpdateState(reader);
@@ -237,7 +237,7 @@ public class ReleasesJsonReader(JsonStreamReader reader)
             }
         }
 
-        throw new Exception(BenchmarkData.BADJSONREAD);
+        throw new Exception(Error.BADJSONREAD);
     }
 
     public async IAsyncEnumerable<Release> GetReleasesAsync()
@@ -376,7 +376,7 @@ public class ReleasesJsonReader(JsonStreamReader reader)
                 if (string.IsNullOrEmpty(releaseVersion) ||
                     string.IsNullOrEmpty(releaseDate))
                     {                   
-                        throw new Exception(BenchmarkData.BADJSON);
+                        throw new Exception(Error.BADJSON);
                     }
 
                 var releaseDaysAgo = GetDaysAgo(releaseDate, true);
@@ -387,7 +387,7 @@ public class ReleasesJsonReader(JsonStreamReader reader)
             }
         }
 
-        throw new Exception(BenchmarkData.BADJSONREAD);
+        throw new Exception(Error.BADJSONREAD);
     }
 
     private async IAsyncEnumerable<Cve> GetCvesAsync()
@@ -437,7 +437,7 @@ public class ReleasesJsonReader(JsonStreamReader reader)
                 if (string.IsNullOrEmpty(cveUrl) ||
                     string.IsNullOrEmpty(cveId))
                 {                    
-                    throw new Exception(BenchmarkData.BADJSON);
+                    throw new Exception(Error.BADJSON);
                 }
 
                 cve = new Cve(cveId, cveUrl);
@@ -453,7 +453,7 @@ public class ReleasesJsonReader(JsonStreamReader reader)
     {
         ParseState e when e == _parseState => true,
         ParseState e when e > _parseState => false,
-        _ => throw new Exception(BenchmarkData.JSONOUTOFORDER)
+        _ => throw new Exception(Error.JSONOUTOFORDER)
     };
 
     private static int GetDaysAgo(string date, bool positiveNumber = false)

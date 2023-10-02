@@ -1,43 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-using JsonConfig;
+using JsonBenchmark;
 
-List<Benchmark> webBenchmarks =
-[
-    new(nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), async Task<int> (url) => await JsonSerializerBenchmark.JsonSerializerBenchmark.MakeReportWebAsync(url), null),
-    new(nameof(JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark), async Task<int> (url) => await JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark.MakeReportWebAsync(url), null),
-    new(nameof(JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark), async Task<int> (url) => await JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark.MakeReportWebAsync(url), null),
-    new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async Task<int> (url) => await JsonDocumentBenchmark.JsonDocumentBenchmark.MakeReportAsync(url), null),
-    new(nameof(Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark), async Task<int> (url) => await Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark.MakeReportWebAsync(url), null),
-    new(nameof(Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark), async Task<int> (url) => await Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark.MakeReportWebAsync(url), null),
-    new(nameof(Utf8JsonReaderWriterStreamRawBenchmark.Utf8JsonReaderWriterStreamRawBenchmark), async Task<int> (url) => await Utf8JsonReaderWriterStreamRawBenchmark.Utf8JsonReaderWriterStreamRawBenchmark.MakeReportWebAsync(url), null),
-    new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), async Task<int> (url) => await NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.MakeReportWebAsync(url), null),
-];
-
-List<Benchmark> localBenchmarks =
-[
-    new(nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), async Task<int> (path) => await JsonSerializerBenchmark.JsonSerializerBenchmark.MakeReportFileAsync(path), null),
-    new(nameof(JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark), async Task<int> (path) => await JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark.MakeReportFileAsync(path), null),
-    new(nameof(JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark), async Task<int> (path) => await JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark.MakeReportFileAsync(path), null),
-    new(nameof(JsonDocumentBenchmark.JsonDocumentBenchmark), async Task<int> (path) => await JsonDocumentBenchmark.JsonDocumentBenchmark.MakeReportFileAsync(path), null),
-    new(nameof(Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark), async Task<int> (path) => await Utf8JsonReaderWriterStreamBenchmark.Utf8JsonReaderWriterStreamBenchmark.MakeReportFileAsync(path), null),
-    new(nameof(Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark), async Task<int> (path) => await Utf8JsonReaderWriterPipelineBenchmark.Utf8JsonReaderWriterPipelineBenchmark.MakeReportFileAsync(path), null),
-    new(nameof(Utf8JsonReaderWriterStreamRawBenchmark.Utf8JsonReaderWriterStreamRawBenchmark), async Task<int> (path) => await Utf8JsonReaderWriterStreamRawBenchmark.Utf8JsonReaderWriterStreamRawBenchmark.MakeReportFileAsync(path), null),
-    new(nameof(NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark), null, (path) => NewtonsoftJsonSerializerBenchmark.NewtonsoftJsonSerializerBenchmark.MakeReportFile(path)),
-];
-
-List<Benchmark> memoryBenchmarks =
-[
-    new(nameof(JsonSerializerBenchmark.JsonSerializerBenchmark), null, (json) => JsonSerializerBenchmark.JsonSerializerBenchmark.MakeReportMemory(json)),
-    new(nameof(JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark), null, (json) => JsonSerializerSourceGeneratorPocoBenchmark.JsonSerializerSourceGeneratorPocoBenchmark.MakeReportMemory(json)),
-    new(nameof(JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark), null, (json) => JsonSerializerSourceGeneratorRecordBenchmark.JsonSerializerSourceGeneratorRecordBenchmark.MakeReportMemory(json)),
-];
-
-var benchmarks = webBenchmarks;
-string target = BenchmarkData.RemoteUrl;
+var benchmarks = Benchmark.WebBenchmarks;
+string target = Benchmark.RemoteUrl;
 string targetJson = "";
 
 int count = args.Length > 0 && int.TryParse(args[0], out int num) ? num : -1;
@@ -45,7 +12,7 @@ int index = args.Length > 1 && int.TryParse(args[1], out num) ? num : -1;
 
 if (index > -1)
 {
-    BenchmarkData.File = BenchmarkData.FakeReleaseJson[index];
+    Benchmark.File = Benchmark.FakeReleaseJson[index];
 }
 
 if (count is -1)
@@ -54,20 +21,20 @@ if (count is -1)
 }
 else if (count > 300)
 {
-    benchmarks = memoryBenchmarks;
-    target = BenchmarkData.Path;
+    benchmarks = Benchmark.MemoryBenchmarks;
+    target = Benchmark.Path;
     targetJson = File.ReadAllText(target);
     count -= 200;
 }
 else if (count > 200)
 {
-    benchmarks = localBenchmarks;
-    target = BenchmarkData.Path;
+    benchmarks = Benchmark.FileBenchmarks;
+    target = Benchmark.Path;
     count -= 200;
 }
 else if (count > 100)
 {
-    target = BenchmarkData.LocalUrl;
+    target = Benchmark.LocalUrl;
     count -= 100;
 }
 
@@ -169,7 +136,7 @@ else
 }
 
 
-static async Task RunMemoryBenchmark(Benchmark benchmark, string url)
+static async Task RunMemoryBenchmark(BenchmarkInfo benchmark, string url)
 {
     Console.WriteLine($"********{benchmark.Name}");
     var beforeGCCount = GC.CollectionCount(0);
@@ -198,7 +165,7 @@ static async Task RunMemoryBenchmark(Benchmark benchmark, string url)
 
     Console.WriteLine();
     Console.WriteLine("JSON:");
-    Console.WriteLine(BenchmarkData.RemoteUrl);
+    Console.WriteLine(Benchmark.RemoteUrl);
     Console.WriteLine();
     Console.WriteLine($"{nameof(Environment.WorkingSet)}: {afterWorkingSet - beforeWorkingSet}");
     Console.WriteLine($"{nameof(GC.GetTotalAllocatedBytes)}: {afterAllocatedBytes - beforeAllocatedBytes}");
@@ -215,7 +182,3 @@ static async Task RunMemoryBenchmark(Benchmark benchmark, string url)
     Console.WriteLine($"{nameof(RuntimeInformation.FrameworkDescription)}: {RuntimeInformation.FrameworkDescription}");
     Console.WriteLine($"{nameof(RuntimeInformation.OSDescription)}: {RuntimeInformation.OSDescription}");
 }
-
-public record Benchmark(string Name, Func<string, Task<int>>? AsyncTest, Func<string, int>? Test);
-
-public record BenchmarkResult(int Pass, string Name, long Duration, int Length);

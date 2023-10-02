@@ -1,5 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
-using JsonConfig;
+using JsonBenchmark;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
@@ -20,7 +19,7 @@ public class NewtonsoftJsonSerializerBenchmark
         using JsonReader reader = new JsonTextReader(sr);
 
         // Process JSON
-        MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception();
+        MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception(Error.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         string reportJson = JsonConvert.SerializeObject(report);
         WriteJsonToConsole(reportJson);
@@ -38,7 +37,7 @@ public class NewtonsoftJsonSerializerBenchmark
         using JsonReader reader = new JsonTextReader(sr);
 
         // Process JSON
-        MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception();
+        MajorRelease release = serializer.Deserialize<MajorRelease>(reader) ?? throw new Exception(Error.BADJSON);
         Report report = new(DateTime.Today.ToShortDateString(), [ GetVersion(release) ]);
         string reportJson = JsonConvert.SerializeObject(report);
         WriteJsonToConsole(reportJson);

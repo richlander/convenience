@@ -1,7 +1,6 @@
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using JsonConfig;
+using JsonBenchmark;
 
 namespace JsonDocumentBenchmark;
 
@@ -18,7 +17,7 @@ public static class JsonDocumentBenchmark
         var stream = await responseMessage.Content.ReadAsStreamAsync();
 
         // Parse Json from stream
-        var doc = await JsonNode.ParseAsync(stream) ?? throw new Exception(BenchmarkData.BADJSON);
+        var doc = await JsonNode.ParseAsync(stream) ?? throw new Exception(Error.BADJSON);
         var version = doc["channel-version"]?.ToString() ?? "";
         var supported = doc["support-phase"]?.ToString() is "active" or "maintenance";
         var eolDate = doc["eol-date"]?.ToString() ??  "";
@@ -53,7 +52,7 @@ public static class JsonDocumentBenchmark
         using Stream stream = File.Open(path, FileMode.Open);
 
         // Parse Json from stream
-        var doc = await JsonNode.ParseAsync(stream) ?? throw new Exception(BenchmarkData.BADJSON);
+        var doc = await JsonNode.ParseAsync(stream) ?? throw new Exception(Error.BADJSON);
         var version = doc["channel-version"]?.ToString() ?? "";
         var supported = doc["support-phase"]?.ToString() is "active" or "maintenance";
         var eolDate = doc["eol-date"]?.ToString() ??  "";
@@ -101,7 +100,7 @@ public static class JsonDocumentBenchmark
             {
                 JsonValueKind.True => true,
                 JsonValueKind.False => false,
-                _ => throw new Exception(BenchmarkData.BADJSON)
+                _ => throw new Exception(Error.BADJSON)
             };
 
             if (securityOnly && !security)
@@ -113,7 +112,7 @@ public static class JsonDocumentBenchmark
                 securityOnly = true;
             }
 
-            var cves = release["cve-list"] ?? throw new Exception(BenchmarkData.BADJSON);
+            var cves = release["cve-list"] ?? throw new Exception(Error.BADJSON);
 
             var releaseObject = new JsonObject()
             {
