@@ -3,10 +3,6 @@ using System.Runtime;
 using System.Runtime.InteropServices;
 using JsonBenchmark;
 
-var benchmarks = Benchmark.WebBenchmarks;
-string target = Benchmark.RemoteUrl;
-string targetJson = "";
-
 int count = args.Length > 0 && int.TryParse(args[0], out int num) ? num : -1;
 int index = args.Length > 1 && int.TryParse(args[1], out num) ? num : -1;
 
@@ -14,6 +10,10 @@ if (index > -1)
 {
     Benchmark.File = Benchmark.FakeReleaseJson[index];
 }
+
+var benchmarks = Benchmark.WebBenchmarks;
+string target = Benchmark.RemoteUrl;
+string targetJson = "";
 
 if (count is -1)
 {
