@@ -6,7 +6,7 @@ namespace JsonDocumentBenchmark;
 
 public static class JsonDocumentBenchmark
 {
-    private static readonly JsonSerializerOptions OPTIONS = new() { WriteIndented = false };
+    private static readonly JsonSerializerOptions _options = new() { WriteIndented = false };
 
     // Benchmark for JSON via Web URL
     public static async Task<int> MakeReportAsync(string url)
@@ -41,7 +41,7 @@ public static class JsonDocumentBenchmark
         };
 
         // Generate report
-        string reportJson = report.ToJsonString(OPTIONS);
+        string reportJson = report.ToJsonString(_options);
         WriteJsonToConsole(reportJson);
         return reportJson.Length;
     }
@@ -77,7 +77,7 @@ public static class JsonDocumentBenchmark
         };
 
         // Generate JSON
-        string reportJson = report.ToJsonString(OPTIONS);
+        string reportJson = report.ToJsonString(_options);
         WriteJsonToConsole(reportJson);
         return reportJson.Length;
     }
