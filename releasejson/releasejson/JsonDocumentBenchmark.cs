@@ -40,6 +40,7 @@ public static class JsonDocumentBenchmark
             }
         };
 
+        // Generate report
         string reportJson = report.ToJsonString(OPTIONS);
         WriteJsonToConsole(reportJson);
         return reportJson.Length;
