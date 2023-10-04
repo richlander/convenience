@@ -14,14 +14,23 @@ The app can be run with `dotnet run -c Release`.
 
 In in its default configuration, it will run all the implementations `16` times, calling the remote URL for one of the documents.
 
-The app takes a single integer value as input, such as `dotnet run -c Release -- 0`
+The app takes an integer value as input, such as `dotnet run -c Release -- 0`
 
 - `0`-`7` -- Runs a specific benchmark, and collects memory use information. Elapsed time is also provided, but isn't a useful number, since JIT cost is dominant
 - `>= 10` -- Runs all the benchmarks n times, using a web URL.
 - `100` -- Runs all the benchmarks once, using a web URL.
 - `> 100` -- Runs all the benchmarks n times, using a local URL (need to start the [webserver](../fakejsonweb) first).
 - `> 200` -- Runs all the benchmarks n times, using a local file.
+- `> 300` -- Runs all the benchmarks n times, using a string (acquired from a local file).
 
-The file chosen to process can be changed in [`BenchmarkData.cs`](BenchmarkData.cs).
+The file used can be changed by specifying a second integer value as input, which reference an array in [`BenchmarkData.cs`](BenchmarkData.cs).
 
 In the cases that the benchmarks are run multiple times, a certain number of runs are thrown away -- for producing an elapsed time average -- for warmup and to remove outliers. The elapsed time is collected in ticks, since some of the values collected may be around or below 1ms.
+
+For example:
+
+```
+dotnet run -c Release 216 3
+```
+
+This will run all the benchmarks 16 times with a local file, using the document referenced by `FakeReleaseJson[3]`.
