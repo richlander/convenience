@@ -15,7 +15,7 @@ public static class Benchmark
         "fake-releases-compact.json",
     ];
     public const string LocalHost = "http://localhost:5255/";
-    public const string RemoteHost = "https://raw.githubusercontent.com/richlander/convenience/json/releasejson/fakejson/";
+    public const string RemoteHost = "https://raw.githubusercontent.com/richlander/convenience/main/releasejson/fakejson/";
 
     public static string File { get; set; } = FakeReleaseJson[0];
 
