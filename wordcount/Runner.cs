@@ -1,41 +1,38 @@
 using System.Data;
+using System.Runtime.Intrinsics;
 using BenchmarkData;
 
 namespace Runner;
 
 public static class Runner
 {
-    public static Count RunOneFile()
+    public static Count RunOneFile(string path)
     {
-        var count = FileOpenSearchValuesBenchmark.FileOpenSearchValuesBenchmark.Count(BenchmarkData.BenchmarkValues.FilePath);
+        var count = FileOpenSearchValuesBenchmark.FileOpenSearchValuesBenchmark.Count(path);
         Console.WriteLine($"{count.Lines} {count.Words} {count.Bytes} {count.File}");
         return count;
     }
 
-    public static void RunMultiFile()
+    public static void RunMultiFile(string path)
     {
-        List<Count> counts = [];
+        int totalLines = 0, totalWords = 0, totalBytes = 0;
 
-        foreach (var file in Directory.EnumerateFiles(BenchmarkData.BenchmarkValues.DirectoryPath))
+        foreach (var file in Directory.EnumerateFiles(path).Order())
         {
-            var count = RunOneFile();
-            counts.Add(count);
+            var count = RunOneFile(file);
+            totalLines += count.Lines;
+            totalWords += count.Words;
+            totalBytes += totalWords;
         }
-
-        PrintCounts(counts);
-    }
-
-    public static void PrintCounts(List<Count> counts)
-    {
-        foreach (var count in counts)
-        {
-            Console.WriteLine($"{count.Lines} {count.Words} {count.Bytes} {count.File}");
-        }
-
-        var totalLines = counts.Sum(c => c.Lines);
-        var totalWords = counts.Sum(c => c.Words);
-        var totalBytes = counts.Sum(c => c.Bytes);
 
         Console.WriteLine($"{totalLines} {totalWords} {totalBytes} total");
+    }
+
+    public static void PrintHardwareAcceleration()
+    {
+        Console.WriteLine($"{nameof(Vector64)}.IsHardwareAccelerated: {Vector64.IsHardwareAccelerated}");
+        Console.WriteLine($"{nameof(Vector128)}.IsHardwareAccelerated: {Vector128.IsHardwareAccelerated}");
+        Console.WriteLine($"{nameof(Vector256)}.IsHardwareAccelerated: {Vector256.IsHardwareAccelerated}");
+        Console.WriteLine($"{nameof(Vector512)}.IsHardwareAccelerated: {Vector512.IsHardwareAccelerated}");
     }
 }

@@ -1,13 +1,22 @@
-﻿int iterations = args.Length > 0 && int.TryParse(args[0], out int val) ? val : 16;
+﻿int iterations = args.Length > 0 && int.TryParse(args[0], out int val) ? val : 0;
 
-
-if (iterations > 100)
+if (iterations > 200)
 {
-    MultiFileTest.MultiFileTest.Go(iterations);
+    MultiFileTest.MultiFileTest.Go(iterations - 200);
+}
+else if (iterations > 100)
+{
+    OneFileTest.OneFileTest.Go(iterations- 100);
+}
+else if (iterations is 2)
+{
+    Runner.Runner.PrintHardwareAcceleration();
+}
+else if (iterations is 1)
+{
+    Runner.Runner.RunMultiFile(BenchmarkData.BenchmarkValues.DirectoryPath);
 }
 else
 {
-    OneFileTest.OneFileTest.Go(iterations);
+    Runner.Runner.RunOneFile(BenchmarkData.BenchmarkValues.FilePath);
 }
-
-
