@@ -34,7 +34,7 @@ public static class PrintTestResults
 
         foreach (var result in results.OrderBy(r => r.Average))
         {
-            Console.WriteLine($"{result.Name}: {result.Average:.##}");
+            Console.WriteLine($"{result.Name}: {result.Average:.###}");
 
             if (result.Values.Count != expectedIterations)
             {
