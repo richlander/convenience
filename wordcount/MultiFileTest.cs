@@ -44,8 +44,9 @@ public static class MultiFileTest
             }
         }
 
-        Console.WriteLine();
+        Console.WriteLine("hi");
+        Console.ReadLine();
 
-        PrintTestResults.Print(benchmarkResults, iterations);
+        Runner.PrintTestResults.Print(benchmarkResults, iterations);
     }
 }

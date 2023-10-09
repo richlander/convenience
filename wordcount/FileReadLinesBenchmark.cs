@@ -1,7 +1,7 @@
 
 using BenchmarkData;
 
-namespace ReadLinesBenchmark;
+namespace FileReadLinesBenchmark;
 
 public static class FileReadLinesBenchmark
 {

@@ -1,5 +1,7 @@
 using BenchmarkData;
 
+namespace Runner;
+
 public static class PrintTestResults
 {
     public static void Print(List<BenchmarkResult> benchmarkResults, int iterations)
@@ -32,14 +34,19 @@ public static class PrintTestResults
         Console.WriteLine($"Measured passes: {results[0].Values.Count}");
         Console.WriteLine();
 
+        Console.WriteLine("Order by name:");
+
+        foreach (var result in results.OrderBy(r => r.Name))
+        {
+            Console.WriteLine($"{result.Name}: {result.Average:.###}");
+        }
+
+        Console.WriteLine();
+        Console.WriteLine("Order by average:");
+        
         foreach (var result in results.OrderBy(r => r.Average))
         {
             Console.WriteLine($"{result.Name}: {result.Average:.###}");
-
-            if (result.Values.Count != expectedIterations)
-            {
-                Console.WriteLine($"***Warning: iterator count doesn't match. Expected {expectedIterations} and observed {result.Values.Count}.");
-            }
         }
     }
 }

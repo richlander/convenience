@@ -1,6 +1,6 @@
 using BenchmarkData;
 
-namespace ReadAllLinesBenchmark;
+namespace FileReadAllLinesBenchmark;
 
 public static class FileReadAllLinesBenchmark
 {
