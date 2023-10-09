@@ -13,4 +13,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="benchmarkdotnet" Version="0.13.9" />
+  </ItemGroup>
+
 </Project>
