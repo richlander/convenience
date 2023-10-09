@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using BenchmarkData;
 
 namespace Runner;
@@ -19,12 +20,11 @@ public static class PrintTestResults
         Console.WriteLine();
 
         // Remove warmup iterations and outliers (using a TRIMMEAN-like approach)
-        var resultDivisor = 1_000_000;
         var warmupIterations = int.Min(6, iterations / 4);
         var warmupSkipCount = warmupIterations * benchmarks.Count;
         var outlierSkipCount = int.Min(2, iterations / 10);
-        var resultValues = benchmarkResults.Skip(warmupSkipCount).GroupBy(r => r.Benchmark).Select(g => new {Name=g.Key, Values=g.Select(r => r.Duration).Order().Skip(outlierSkipCount).SkipLast(outlierSkipCount)});
-        var results = resultValues.Select(r => new {Name=r.Name, Values=r.Values.ToList(), Average=r.Values.Average()/resultDivisor}).ToList();
+        var resultValues = benchmarkResults.Skip(warmupSkipCount).GroupBy(r => r.Benchmark).Select(g => new {Name=g.Key, Values=g.Select(r => r.Duration.TotalMilliseconds).Order().Skip(outlierSkipCount).SkipLast(outlierSkipCount)});
+        var results = resultValues.Select(r => new {Name=r.Name, Values=r.Values.ToList(), Average=r.Values.Average()}).ToList();
         
         var expectedIterations = iterations - warmupIterations - (outlierSkipCount * 2);
 

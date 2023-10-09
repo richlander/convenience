@@ -26,10 +26,10 @@ public static class OneFileTest
                 var stopwatch = Stopwatch.StartNew();
                 var counts = benchmark.Test(path);
                 stopwatch.Stop();
-                benchmarkResults.Add(new(i, benchmark.Name, stopwatch.ElapsedTicks, counts));
+                benchmarkResults.Add(new(i, benchmark.Name, stopwatch.Elapsed, counts));
 
                 Console.WriteLine();
-                Console.WriteLine($"{nameof(Stopwatch.ElapsedTicks)}: {stopwatch.ElapsedTicks};");
+                Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds};");
                 Console.WriteLine($"{counts.Lines} {counts.Words} {counts.Bytes}");
                 Console.WriteLine();
             }

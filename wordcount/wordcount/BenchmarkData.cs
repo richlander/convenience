@@ -26,6 +26,6 @@ public static class BenchmarkValues
 
 public record Benchmark(string Name, Func<string, Count> Test);
 
-public record struct BenchmarkResult(int Pass, string Benchmark, long Duration, Count Counts);
+public record struct BenchmarkResult(int Pass, string Benchmark, TimeSpan Duration, Count Counts);
 
 public record struct Count(int Lines, int Words, int Bytes, string File);

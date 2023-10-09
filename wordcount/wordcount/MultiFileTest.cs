@@ -35,10 +35,10 @@ public static class MultiFileTest
                 }
 
                 stopwatch.Stop();
-                benchmarkResults.Add(new(i, benchmark.Name, stopwatch.ElapsedTicks, sum));
+                benchmarkResults.Add(new(i, benchmark.Name, stopwatch.Elapsed, sum));
 
                 Console.WriteLine();
-                Console.WriteLine($"{nameof(Stopwatch.ElapsedTicks)}: {stopwatch.ElapsedTicks};");
+                Console.WriteLine($"{nameof(Stopwatch.ElapsedMilliseconds)}: {stopwatch.ElapsedMilliseconds};");
                 Console.WriteLine($"{sum.Lines} {sum.Words} {sum.Bytes}");
                 Console.WriteLine();
             }
