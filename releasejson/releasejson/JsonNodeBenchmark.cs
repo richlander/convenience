@@ -2,9 +2,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using JsonBenchmark;
 
-namespace JsonDocumentBenchmark;
+namespace JsonNodeBenchmark;
 
-public static class JsonDocumentBenchmark
+public static class JsonNodeBenchmark
 {
     private static readonly JsonSerializerOptions _options = new() { WriteIndented = false };
 
