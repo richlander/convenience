@@ -8,7 +8,7 @@ public static class Runner
 {
     public static Count RunOneFile(string path)
     {
-        var count = FileOpenSearchValuesBenchmark.FileOpenSearchValuesBenchmark.Count(path);
+        var count = BenchmarkValues.Benchmark.Test(path);
         Console.WriteLine($"{count.Lines} {count.Words} {count.Bytes} {count.File}");
         return count;
     }

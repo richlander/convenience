@@ -7,82 +7,68 @@ public static class FileOpenBenchmark
 {
     public static Count Count(string path)
     {
-        const byte LINE_FEED = (byte)'\n';
-        const byte CARRIAGE_RETURN = (byte)'\r';
-        const byte SPACE = (byte)' ';
-        ReadOnlySpan<byte> searchChars = stackalloc[] {SPACE, LINE_FEED};
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
+        int wordCount = 0, lineCount = 0, byteCount = 0;
+        bool inWord = false;
 
-        int wordCount = 0;
-        int lineCount = 0;
-        int byteCount = 0;
-        int read = 0;
-        bool wasSpace = true;
 
         using var stream = File.Open(path, FileMode.Open, FileAccess.Read);
-        byte[] rentedArray = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
-        Span<byte> buffer = rentedArray;
         ReadOnlySpan<byte> text = buffer;
 
-        while ((read = stream.Read(buffer)) > 0)
+        int count = 0;
+        while ((count = stream.Read(buffer)) > 0)
         {                
-            byteCount += read;
-            text = buffer.Slice(0, read);
-            
-            while (text.Length > 0)
+            byteCount += count;
+            Span<byte> bytes = buffer.AsSpan(0, count);
+            int pos;
+
+            // If we're in a word, get out of it.
+            if (inWord)
             {
-                if (text[0] is SPACE)
+                pos = bytes.IndexOfAny((byte)' ', (byte)'\n');
+                if (pos < 0)
                 {
-                    wasSpace = true;
-                    text = text.Slice(1);
                     continue;
                 }
-                else if (text[0] is CARRIAGE_RETURN)
+
+                bytes = bytes.Slice(pos);
+                inWord = false;
+            }
+
+            // While there's still more data in our buffer, process it.
+            while (!bytes.IsEmpty)
+            {
+                // Find the start of the next word
+                if (bytes[0] is (byte)' ')
                 {
-                    text = text.Slice(1);
+                    bytes = bytes.Slice(1);
                     continue;
                 }
-                else if (text[0] is LINE_FEED)
+                else if (bytes[0] is (byte)'\n')
                 {
-                    wasSpace = true;
-                    text = text.Slice(1);
                     lineCount++;
+                    bytes = bytes.Slice(1);
                     continue;
                 }
-                else if (wasSpace)
+
+                // We're at the start of a word. Count it and try to find its end.
+                wordCount++;
+                pos = bytes.IndexOfAny((byte)' ', (byte)'\n');
+                if (pos < 0)
                 {
-                    wasSpace = false;
-                    wordCount++;
+                    inWord = true;
+                    break;
                 }
 
-                int nextIndex = 0;
-                int indexOf = text.IndexOfAny(searchChars);
-
-                if (indexOf > -1)
+                if (bytes[pos] is (byte)'\n')
                 {
-                    wasSpace = true;
-                    nextIndex = indexOf + 1;
-
-                    if (text[indexOf] is LINE_FEED)
-                    {
-                        lineCount++;       
-                    }
+                    lineCount++;
                 }
-                else
-                {
-                    if (wasSpace)
-                    {
-                        wordCount++;
-                    }
-
-                    wasSpace = false;
-                    nextIndex = text.Length;
-                }
-
-                text = text.Slice(nextIndex);
+                bytes = bytes.Slice(pos + 1);
             }
         }
 
-        ArrayPool<byte>.Shared.Return(rentedArray);
+        ArrayPool<byte>.Shared.Return(buffer);
         return new(lineCount, wordCount, byteCount, Path.GetFileName(path));
     }
 }

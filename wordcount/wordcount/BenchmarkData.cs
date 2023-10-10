@@ -17,11 +17,11 @@ public static class BenchmarkValues
             new(nameof(FileReadLinesBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
             new(nameof(FileOpenTextBenchmark), FileOpenTextBenchmark.FileOpenTextBenchmark.Count),
             new(nameof(FileOpenBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
-            new(nameof(FileOpenSearchValuesBenchmark), FileOpenSearchValuesBenchmark.FileOpenSearchValuesBenchmark.Count),
-            new(nameof(FileOpenSToubBenchmark), FileOpenSToubBenchmark.FileOpenSToubBenchmark.Count),
-            new(nameof(FileOpenSearchValuesSToubBenchmark), FileOpenSearchValuesSToubBenchmark.FileOpenSearchValuesSToubBenchmark.Count),
+            new(nameof(FileOpenHandleSearchValuesBenchmark), FileOpenHandleSearchValuesBenchmark.FileOpenHandleSearchValuesBenchmark.Count),
             new(nameof(FileOpenHandleBenchmark), FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count),
         ];
+
+    public static Benchmark Benchmark { get; set; } = Benchmarks[0];
 }
 
 public record Benchmark(string Name, Func<string, Count> Test);

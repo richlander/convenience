@@ -1,22 +1,20 @@
-﻿using BenchmarkDotNet.Running;
+﻿int iterations = args.Length > 0 && int.TryParse(args[0], out int val) ? val : 0;
+int index = args.Length > 1 && int.TryParse(args[1], out int val2) ? val2 : 0;
 
-int iterations = args.Length > 0 && int.TryParse(args[0], out int val) ? val : 0;
+if (iterations is 10)
+{
+    BenchmarkDotNet.Running.BenchmarkRunner.Run<BenchmarkTests.BenchmarkTests>();
+    return;
+}
 
-if (iterations > 200)
+if (index > 0)
 {
-    MultiFileTest.MultiFileTest.Go(iterations - 200);
+    BenchmarkData.BenchmarkValues.Benchmark = BenchmarkData.BenchmarkValues.Benchmarks[index];
 }
-else if (iterations > 100)
-{
-    OneFileTest.OneFileTest.Go(iterations- 100);
-}
-else if (iterations is 2)
+
+if (iterations is 2)
 {
     Runner.Runner.PrintHardwareAcceleration();
-}
-else if (iterations is 10)
-{
-    BenchmarkRunner.Run<BenchmarkTests.BenchmarkTests>();
 }
 else if (iterations is 1)
 {
