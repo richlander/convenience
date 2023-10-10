@@ -7,6 +7,8 @@ public static class BenchmarkValues
 
     public static string FilePath => Path.Combine(DirectoryPath, "clarissa_volume1.txt");
 
+    public static string ShortFilePath => Path.Combine(DirectoryPath, "summary.md");
+
     public static string DirectoryPath => Path.Combine(Path.GetDirectoryName(typeof(BenchmarkValues).Assembly.Location)!, "Clarissa_Harlowe");
 
     public static int Size => 16 * 1024;

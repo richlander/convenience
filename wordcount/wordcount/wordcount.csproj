@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="../Clarissa_Harlowe/*.txt" LinkBase="Clarissa_Harlowe">
+    <None Include="../Clarissa_Harlowe/*" LinkBase="Clarissa_Harlowe">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

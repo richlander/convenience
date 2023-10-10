@@ -18,7 +18,7 @@ if (iterations is 2)
 }
 else if (iterations is 1)
 {
-    Runner.Runner.RunOneFile(BenchmarkData.BenchmarkValues.FilePath);
+    Runner.Runner.RunOneFile(BenchmarkData.BenchmarkValues.ShortFilePath);
 }
 else
 {
