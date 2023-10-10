@@ -13,10 +13,10 @@ public class BenchmarkTests
     public void FileOpenHandle() => FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count(FilePath);
 
     [Benchmark]
-    public void FileOpen() => FileOpenBenchmark.FileOpenBenchmark.Count(FilePath);
+    public void FileOpenHandleSearchValues() => FileOpenHandleSearchValuesBenchmark.FileOpenHandleSearchValuesBenchmark.Count(FilePath);
 
     [Benchmark]
-    public void FileOpenSearchValues() => FileOpenHandleSearchValuesBenchmark.FileOpenHandleSearchValuesBenchmark.Count(FilePath);
+    public void FileOpen() => FileOpenBenchmark.FileOpenBenchmark.Count(FilePath);
 
     [Benchmark]
     public void FileOpenText() => FileOpenTextBenchmark.FileOpenTextBenchmark.Count(FilePath);

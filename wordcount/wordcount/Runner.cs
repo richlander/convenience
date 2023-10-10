@@ -22,7 +22,7 @@ public static class Runner
             var count = RunOneFile(file);
             totalLines += count.Lines;
             totalWords += count.Words;
-            totalBytes += totalWords;
+            totalBytes += count.Bytes;
         }
 
         Console.WriteLine($"{totalLines} {totalWords} {totalBytes} total");

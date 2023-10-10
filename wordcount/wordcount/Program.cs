@@ -1,5 +1,5 @@
 ﻿int iterations = args.Length > 0 && int.TryParse(args[0], out int val) ? val : 0;
-int index = args.Length > 1 && int.TryParse(args[1], out int val2) ? val2 : 0;
+int index = args.Length > 1 && int.TryParse(args[1], out int val2) ? val2 : -1;
 
 if (iterations is 10)
 {
@@ -7,7 +7,7 @@ if (iterations is 10)
     return;
 }
 
-if (index > 0)
+if (index > -1)
 {
     BenchmarkData.BenchmarkValues.Benchmark = BenchmarkData.BenchmarkValues.Benchmarks[index];
 }
@@ -18,9 +18,9 @@ if (iterations is 2)
 }
 else if (iterations is 1)
 {
-    Runner.Runner.RunMultiFile(BenchmarkData.BenchmarkValues.DirectoryPath);
+    Runner.Runner.RunOneFile(BenchmarkData.BenchmarkValues.FilePath);
 }
 else
 {
-    Runner.Runner.RunOneFile(BenchmarkData.BenchmarkValues.FilePath);
+    Runner.Runner.RunMultiFile(BenchmarkData.BenchmarkValues.DirectoryPath);
 }
