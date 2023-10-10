@@ -9,7 +9,6 @@ public static class FileOpenHandleSearchValuesBenchmark
 {
     private static readonly SearchValues<byte> s_searchValues = SearchValues.Create((ReadOnlySpan<byte>)[(byte)' ', (byte)'\n']);
 
-
     public static Count Count(string path)
     {
         const byte NEWLINE = (byte)'\n';

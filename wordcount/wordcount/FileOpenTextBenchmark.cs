@@ -7,9 +7,7 @@ public static class FileOpenTextBenchmark
 {
     public static Count Count(string path)
     {
-        int wordCount = 0;
-        int lineCount = 0;
-        int charCount = 0;
+        int wordCount = 0, lineCount = 0, charCount = 0;
         using var stream = File.OpenText(path);
 
         string? line = null;

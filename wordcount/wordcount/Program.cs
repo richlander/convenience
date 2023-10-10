@@ -10,6 +10,7 @@ if (iterations is 10)
 if (index > -1)
 {
     BenchmarkData.BenchmarkValues.Benchmark = BenchmarkData.BenchmarkValues.Benchmarks[index];
+    Console.WriteLine(BenchmarkData.BenchmarkValues.Benchmark.Name);
 }
 
 if (iterations is 2)

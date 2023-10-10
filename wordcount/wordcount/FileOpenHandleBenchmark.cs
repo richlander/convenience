@@ -15,8 +15,8 @@ public static class FileOpenHandleBenchmark
         int wordCount = 0, lineCount = 0, byteCount = 0;
         bool wasSpace = true;
 
-        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
+        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
 
         int count = 0;
         while ((count = RandomAccess.Read(handle, buffer, byteCount)) > 0)
