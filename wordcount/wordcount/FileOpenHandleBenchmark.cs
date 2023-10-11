@@ -1,3 +1,5 @@
+
+
 using System.Buffers;
 using BenchmarkData;
 
@@ -5,18 +7,19 @@ namespace FileOpenHandleBenchmark;
 
 public static class FileOpenHandleBenchmark
 {
+    private static readonly SearchValues<byte> s_searchValues = SearchValues.Create((ReadOnlySpan<byte>)[(byte)' ', (byte)'\n']);
+
     public static Count Count(string path)
     {
         const byte NEWLINE = (byte)'\n';
         const byte CARRIAGE_RETURN = (byte)'\r';
         const byte SPACE = (byte)' ';
-        ReadOnlySpan<byte> searchChars = [SPACE, NEWLINE];
 
         int wordCount = 0, lineCount = 0, byteCount = 0;
         bool wasSpace = true;
 
-        byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
         using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
 
         int count = 0;
         while ((count = RandomAccess.Read(handle, buffer, byteCount)) > 0)
@@ -51,7 +54,7 @@ public static class FileOpenHandleBenchmark
                 }
 
                 int nextIndex = 0;
-                int indexOf = bytes.IndexOfAny(searchChars);
+                int indexOf = bytes.IndexOfAny(s_searchValues);
 
                 if (indexOf > -1)
                 {

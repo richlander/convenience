@@ -15,8 +15,8 @@ public static class BenchmarkValues
 
     public static List<Benchmark> Benchmarks => 
         [
-            new(nameof(FileOpenHandleSearchValuesBenchmark), FileOpenHandleSearchValuesBenchmark.FileOpenHandleSearchValuesBenchmark.Count),
             new(nameof(FileOpenHandleBenchmark), FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count),
+            new(nameof(FileOpenHandleNoSearchValuesBenchmark), FileOpenHandleNoSearchValuesBenchmark.FileOpenHandleNoSearchValuesBenchmark.Count),
             new(nameof(FileOpenBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
             new(nameof(FileOpenTextCharBenchmark), FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count),
             new(nameof(FileOpenTextBenchmark), FileOpenTextBenchmark.FileOpenTextBenchmark.Count),
