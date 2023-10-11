@@ -7,13 +7,13 @@ namespace FileOpenHandleBenchmark;
 
 public static class FileOpenHandleBenchmark
 {
-    private static readonly SearchValues<byte> s_searchValues = SearchValues.Create((ReadOnlySpan<byte>)[(byte)' ', (byte)'\n']);
-
     public static Count Count(string path)
     {
         const byte NEWLINE = (byte)'\n';
         const byte CARRIAGE_RETURN = (byte)'\r';
         const byte SPACE = (byte)' ';
+        ReadOnlySpan<byte> searchValues = [SPACE, NEWLINE];
+
 
         int wordCount = 0, lineCount = 0, byteCount = 0;
         bool wasSpace = true;
@@ -54,7 +54,7 @@ public static class FileOpenHandleBenchmark
                 }
 
                 int nextIndex = 0;
-                int indexOf = bytes.IndexOfAny(s_searchValues);
+                int indexOf = bytes.IndexOfAny(searchValues);
 
                 if (indexOf > -1)
                 {

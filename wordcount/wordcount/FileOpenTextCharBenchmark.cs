@@ -6,13 +6,12 @@ namespace FileOpenTextSpanCharBenchmark;
 
 public static class FileOpenTextSpanCharBenchmark
 {
-    private static readonly SearchValues<char> s_searchValues = SearchValues.Create((ReadOnlySpan<char>)[' ', '\n']);
-
     public static Count Count(string path)
     {
         const char NEWLINE = '\n';
         const char CARRIAGE_RETURN = '\r';
         const char SPACE = ' ';
+        ReadOnlySpan<char> searchValues = [SPACE, NEWLINE];
 
         int wordCount = 0, lineCount = 0, charCount = 0;
         bool wasSpace = true;
@@ -53,7 +52,7 @@ public static class FileOpenTextSpanCharBenchmark
                 }
 
                 int nextIndex = 0;
-                int indexOf = chars.IndexOfAny(s_searchValues);
+                int indexOf = chars.IndexOfAny(searchValues);
 
                 if (indexOf > -1)
                 {
