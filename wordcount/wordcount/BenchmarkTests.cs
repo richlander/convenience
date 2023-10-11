@@ -21,6 +21,9 @@ public class BenchmarkTests
     public void FileOpen() => FileOpenBenchmark.FileOpenBenchmark.Count(FilePath);
 
     [Benchmark]
+    public void FileOpenTextCharSearchValues() => FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count(FilePath);
+
+    [Benchmark]
     public void FileOpenText() => FileOpenTextBenchmark.FileOpenTextBenchmark.Count(FilePath);
 
     [Benchmark]
