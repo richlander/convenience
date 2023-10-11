@@ -6,7 +6,7 @@ namespace BenchmarkTests;
 [MemoryDiagnoser]
 public class BenchmarkTests
 {
-    public string FilePath { get; set; } = BenchmarkData.BenchmarkValues.FilePath;
+    public string FilePath { get; set; } = BenchmarkData.BenchmarkValues.ShortFilePath;
 
     [Benchmark(Baseline = true)]
     public void FileOpenHandleSearchValues() => FileOpenHandleSearchValuesBenchmark.FileOpenHandleSearchValuesBenchmark.Count(FilePath);
