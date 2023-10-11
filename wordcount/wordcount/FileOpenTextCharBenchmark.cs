@@ -2,9 +2,9 @@
 using System.Buffers;
 using BenchmarkData;
 
-namespace FileOpenTextCharBenchmark;
+namespace FileOpenTextSpanCharBenchmark;
 
-public static class FileOpenTextCharBenchmark
+public static class FileOpenTextSpanCharBenchmark
 {
     private static readonly SearchValues<char> s_searchValues = SearchValues.Create((ReadOnlySpan<char>)[' ', '\n']);
 
