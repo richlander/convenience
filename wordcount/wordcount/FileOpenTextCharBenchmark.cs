@@ -2,7 +2,7 @@
 using System.Buffers;
 using BenchmarkData;
 
-namespace FileOpenTextSpanBenchmark;
+namespace FileOpenTextCharBenchmark;
 
 public static class FileOpenTextCharBenchmark
 {

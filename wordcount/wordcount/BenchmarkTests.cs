@@ -18,10 +18,13 @@ public class BenchmarkTests
     public void FileOpen() => FileOpenBenchmark.FileOpenBenchmark.Count(FilePath);
 
     [Benchmark]
-    public void FileOpenTextChar() => FileOpenTextSpanBenchmark.FileOpenTextCharBenchmark.Count(FilePath);
+    public void FileOpenTextChar() => FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count(FilePath);
 
     [Benchmark]
     public void FileOpenTextReadLine() => FileOpenTextReadLineBenchmark.FileOpenTextReadLineBenchmark.Count(FilePath);
+    
+    [Benchmark]
+    public void FileOpenTextReadLineOld() => FileOpenTextReadLineOldBenchmark.FileOpenTextReadLineOldBenchmark.Count(FilePath);
 
     [Benchmark]
     public void FileReadLines() => FileReadLinesBenchmark.FileReadLinesBenchmark.Count(FilePath);
