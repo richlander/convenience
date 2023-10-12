@@ -24,9 +24,6 @@ public class BenchmarkTests
     public void FileOpenTextReadLine() => FileOpenTextReadLineBenchmark.FileOpenTextReadLineBenchmark.Count(FilePath);
     
     [Benchmark]
-    public void FileOpenTextReadLineOld() => FileOpenTextReadLineOldBenchmark.FileOpenTextReadLineOldBenchmark.Count(FilePath);
-
-    [Benchmark]
     public void FileReadLines() => FileReadLinesBenchmark.FileReadLinesBenchmark.Count(FilePath);
 
     [Benchmark]
