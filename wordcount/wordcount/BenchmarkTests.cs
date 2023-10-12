@@ -18,7 +18,7 @@ public class BenchmarkTests
     public void FileOpen() => FileOpenBenchmark.FileOpenBenchmark.Count(FilePath);
 
     [Benchmark]
-    public void FileOpenTextSpanChar() => FileOpenTextSpanCharBenchmark.FileOpenTextSpanCharBenchmark.Count(FilePath);
+    public void FileOpenTextChar() => FileOpenTextSpanBenchmark.FileOpenTextCharBenchmark.Count(FilePath);
 
     [Benchmark]
     public void FileOpenTextReadLine() => FileOpenTextReadLineBenchmark.FileOpenTextReadLineBenchmark.Count(FilePath);

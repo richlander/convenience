@@ -2,9 +2,9 @@
 using System.Buffers;
 using BenchmarkData;
 
-namespace FileOpenTextSpanCharBenchmark;
+namespace FileOpenTextSpanBenchmark;
 
-public static class FileOpenTextSpanCharBenchmark
+public static class FileOpenTextCharBenchmark
 {
     public static Count Count(string path)
     {

@@ -18,7 +18,7 @@ public static class BenchmarkValues
             new(nameof(FileOpenHandleBenchmark), FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count),
             new(nameof(FileOpenHandleSearchValuesBenchmark), FileOpenHandleSearchValuesBenchmark.FileOpenHandleSearchValuesBenchmark.Count),
             new(nameof(FileOpenBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
-            new(nameof(FileOpenTextSpanCharBenchmark), FileOpenTextSpanCharBenchmark.FileOpenTextSpanCharBenchmark.Count),
+            new(nameof(FileOpenTextSpanBenchmark), FileOpenTextSpanBenchmark.FileOpenTextCharBenchmark.Count),
             new(nameof(FileOpenTextReadLineBenchmark), FileOpenTextReadLineBenchmark.FileOpenTextReadLineBenchmark.Count),
             new(nameof(FileReadLinesBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
             new(nameof(FileReadAllLinesBenchmark), FileReadAllLinesBenchmark.FileReadAllLinesBenchmark.Count),
