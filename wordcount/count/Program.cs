@@ -21,7 +21,7 @@ else if (Directory.Exists(path))
         byteCount += count.Bytes;
     }
 
-    Console.WriteLine($"Totals: {lineCount} {wordCount} {byteCount}");
+    Console.WriteLine($"{"",2} {lineCount, 6}  {wordCount, 6}  {byteCount, 6} total");
 }
 else
 {
@@ -30,5 +30,5 @@ else
 
 void PrintCount(Count count)
 {
-    Console.WriteLine($"{"",2} {count.Lines, -7} {count.Words, -7} {count.Bytes, -7} {count.File, -5}");
+    Console.WriteLine($"{"",2} {count.Lines, 6}  {count.Words, 6}  {count.Bytes, 6} {count.File, 6}");
 }
