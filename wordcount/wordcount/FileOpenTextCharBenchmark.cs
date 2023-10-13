@@ -80,6 +80,6 @@ public static class FileOpenTextCharBenchmark
         }
 
         ArrayPool<char>.Shared.Return(buffer);
-        return new(lineCount, wordCount, charCount, Path.GetFileName(path));
+        return new(lineCount, wordCount, charCount, path);
     }
 }

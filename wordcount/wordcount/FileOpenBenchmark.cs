@@ -79,6 +79,6 @@ public static class FileOpenBenchmark
         }
 
         ArrayPool<byte>.Shared.Return(buffer);
-        return new(lineCount, wordCount, byteCount, Path.GetFileName(path));
+        return new(lineCount, wordCount, byteCount, path);
     }
 }

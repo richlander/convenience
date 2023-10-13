@@ -27,6 +27,6 @@ public static class FileReadAllLinesBenchmark
             }
         }
 
-        return new(lineCount, wordCount, charCount, Path.GetFileName(path));
+        return new(lineCount, wordCount, charCount, path);
     }
 }

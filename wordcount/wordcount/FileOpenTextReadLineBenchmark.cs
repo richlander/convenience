@@ -33,6 +33,6 @@ public static class FileOpenTextReadLineBenchmark
             wordCount++;
         }
 
-        return new(lineCount, wordCount, charCount, Path.GetFileName(path));
+        return new(lineCount, wordCount, charCount, path);
     }
 }
