@@ -6,7 +6,8 @@ namespace BenchmarkTests;
 [MemoryDiagnoser]
 public class BenchmarkTests
 {
-    public string FilePath { get; set; } = BenchmarkData.BenchmarkValues.ShortFilePath;
+    [Params("Clarissa_Harlowe/summary.md", "Clarissa_Harlowe/clarissa_volume1.txt")]
+    public string? FilePath { get; set; }
 
     [Benchmark(Baseline = true)]
     public void FileOpenHandle() => FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count(FilePath);
