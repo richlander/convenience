@@ -7,7 +7,7 @@ namespace BenchmarkTests;
 public class BenchmarkTests
 {
     [Params("Clarissa_Harlowe/summary.md", "Clarissa_Harlowe/clarissa_volume1.txt")]
-    public string? FilePath { get; set; }
+    public string FilePath { get; set; } = "";
 
     [Benchmark(Baseline = true)]
     public void FileOpenHandle() => FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count(FilePath);
