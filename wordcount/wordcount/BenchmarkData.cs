@@ -25,6 +25,28 @@ public static class BenchmarkValues
         ];
 
     public static Benchmark Benchmark { get; set; } = Benchmarks[0];
+
+    public static byte[] Whitespace { get; set; } = GetWhiteSpaceChars();
+
+    public static byte[] GetWhiteSpaceChars()
+    {
+        byte[] whitespace = new byte[8];
+        char c = Char.MinValue;
+        int index = 0;
+
+        while (c < 256)
+        {
+            if (Char.IsWhiteSpace(c))
+            {
+                whitespace[index] = (byte)c;
+                index++;
+            }
+
+            c++;
+        }
+
+        return whitespace;
+    }
 }
 
 public record Benchmark(string Name, Func<string, Count> Test);

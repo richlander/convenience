@@ -5,13 +5,13 @@ namespace FileOpenHandleSearchValuesBenchmark;
 
 public static class FileOpenHandleSearchValuesBenchmark
 {
-    private static readonly SearchValues<byte> s_searchValues = SearchValues.Create((ReadOnlySpan<byte>)[(byte)' ', (byte)'\n']);
+    private static readonly SearchValues<byte> s_searchValues = SearchValues.Create(BenchmarkData.BenchmarkValues.Whitespace);
 
     public static Count Count(string path)
     {
         const byte NEWLINE = (byte)'\n';
         const byte CARRIAGE_RETURN = (byte)'\r';
-        const byte SPACE = (byte)' ';
+        // const byte SPACE = (byte)' ';
 
         int wordCount = 0, lineCount = 0, byteCount = 0;
         bool wasSpace = true;
@@ -27,13 +27,7 @@ public static class FileOpenHandleSearchValuesBenchmark
             
             while (bytes.Length > 0)
             {
-                if (bytes[0] is SPACE)
-                {
-                    wasSpace = true;
-                    bytes = bytes.Slice(1);
-                    continue;
-                }
-                else if (bytes[0] is CARRIAGE_RETURN)
+                if (bytes[0] is CARRIAGE_RETURN)
                 {
                     bytes = bytes.Slice(1);
                     continue;
@@ -43,6 +37,12 @@ public static class FileOpenHandleSearchValuesBenchmark
                     wasSpace = true;
                     bytes = bytes.Slice(1);
                     lineCount++;
+                    continue;
+                }
+                else if (Char.IsWhiteSpace((char)bytes[0]))
+                {
+                    wasSpace = true;
+                    bytes = bytes.Slice(1);
                     continue;
                 }
                 else if (wasSpace)

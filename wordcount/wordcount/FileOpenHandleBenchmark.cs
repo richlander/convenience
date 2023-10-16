@@ -11,8 +11,8 @@ public static class FileOpenHandleBenchmark
     {
         const byte NEWLINE = (byte)'\n';
         const byte CARRIAGE_RETURN = (byte)'\r';
-        const byte SPACE = (byte)' ';
-        ReadOnlySpan<byte> searchValues = [SPACE, NEWLINE];
+        // const byte SPACE = (byte)' ';
+        ReadOnlySpan<byte> searchValues = BenchmarkData.BenchmarkValues.Whitespace;
 
 
         int wordCount = 0, lineCount = 0, byteCount = 0;
@@ -29,13 +29,7 @@ public static class FileOpenHandleBenchmark
             
             while (bytes.Length > 0)
             {
-                if (bytes[0] is SPACE)
-                {
-                    wasSpace = true;
-                    bytes = bytes.Slice(1);
-                    continue;
-                }
-                else if (bytes[0] is CARRIAGE_RETURN)
+                if (bytes[0] is CARRIAGE_RETURN)
                 {
                     bytes = bytes.Slice(1);
                     continue;
@@ -45,6 +39,12 @@ public static class FileOpenHandleBenchmark
                     wasSpace = true;
                     bytes = bytes.Slice(1);
                     lineCount++;
+                    continue;
+                }
+                else if (Char.IsWhiteSpace((char)bytes[0]))
+                {
+                    wasSpace = true;
+                    bytes = bytes.Slice(1);
                     continue;
                 }
                 else if (wasSpace)
