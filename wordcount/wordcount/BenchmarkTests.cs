@@ -12,8 +12,11 @@ public class BenchmarkTests
     [Benchmark(Baseline = true)]
     public void FileOpenHandle() => FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count(FilePath);
 
-    // [Benchmark]
-    // public void FileOpen() => FileOpenBenchmark.FileOpenBenchmark.Count(FilePath);
+    [Benchmark]
+    public void FileOpenHandleAsciiOnly() => FileOpenHandleAsciiOnlyBenchmark.FileOpenHandleAsciiOnlyBenchmark.Count(FilePath);
+
+    [Benchmark]
+    public void FileOpen() => FileOpenBenchmark.FileOpenBenchmark.Count(FilePath);
 
     [Benchmark]
     public void FileOpenTextCharSearchValues() => FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count(FilePath);
@@ -24,9 +27,9 @@ public class BenchmarkTests
     [Benchmark]
     public void FileOpenTextReadLine() => FileOpenTextReadLineBenchmark.FileOpenTextReadLineBenchmark.Count(FilePath);
     
-    // [Benchmark]
-    // public void FileReadLines() => FileReadLinesBenchmark.FileReadLinesBenchmark.Count(FilePath);
+    [Benchmark]
+    public void FileReadLines() => FileReadLinesBenchmark.FileReadLinesBenchmark.Count(FilePath);
 
-    // [Benchmark]
-    // public void FileReadAllLines() => FileReadAllLinesBenchmark.FileReadAllLinesBenchmark.Count(FilePath);
+    [Benchmark]
+    public void FileReadAllLines() => FileReadAllLinesBenchmark.FileReadAllLinesBenchmark.Count(FilePath);
 }

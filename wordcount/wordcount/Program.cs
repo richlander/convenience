@@ -1,9 +1,6 @@
 ﻿int kind = args.Length > 0 && int.TryParse(args[0], out int val) ? val : 0;
 int index = args.Length > 1 && int.TryParse(args[1], out int val2) ? val2 : -1;
 
-kind = 1;
-index = 1;
-
 if (kind is 10)
 {
     BenchmarkDotNet.Running.BenchmarkRunner.Run<BenchmarkTests.BenchmarkTests>();

@@ -7,7 +7,7 @@ namespace BenchmarkData;
 
 public static class BenchmarkValues
 {
-    public static int Size => 16 * 1024;
+    public static int Size => 32 * 1024;
 
     public static SearchValues<char> WhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars().AsSpan());
 
