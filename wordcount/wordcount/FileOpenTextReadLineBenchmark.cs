@@ -15,21 +15,19 @@ public static class FileOpenTextReadLineBenchmark
         {
             lineCount++;
             charCount += line.Length;
-            ReadOnlySpan<char> text = line.TrimStart();
+            bool wasSpace = true;
 
-            if (text.Length is 0)
+            foreach (var c in line)
             {
-                continue;
-            }
+                bool isSpace = Char.IsWhiteSpace(c);
 
-            int index = 0;
-            while ((index = text.IndexOfAny(BenchmarkValues.WhitespaceSearch)) > 0)
-            {
-                wordCount++;
-                text = text.Slice(index).TrimStart();
-            }
+                if (!isSpace && wasSpace)
+                {
+                    wordCount++;
+                }
 
-            wordCount++;
+                wasSpace = isSpace;
+            }
         }
 
         return new(lineCount, wordCount, charCount, path);
