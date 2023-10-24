@@ -1,5 +1,7 @@
 using System.Buffers;
-using System.Net.NetworkInformation;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace BenchmarkData;
 
@@ -17,9 +19,9 @@ public static class BenchmarkValues
     public static List<Benchmark> Benchmarks => 
         [
             new(nameof(FileOpenHandleBenchmark), FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count),
-            new(nameof(FileOpenHandleSearchValuesBenchmark), FileOpenHandleSearchValuesBenchmark.FileOpenHandleSearchValuesBenchmark.Count),
             new(nameof(FileOpenBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
             new(nameof(FileOpenTextCharBenchmark), FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count),
+            new(nameof(FileOpenTextCharSearchValuesBenchmark), FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count),
             new(nameof(FileOpenTextReadLineBenchmark), FileOpenTextReadLineBenchmark.FileOpenTextReadLineBenchmark.Count),
             new(nameof(FileReadLinesBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
             new(nameof(FileReadAllLinesBenchmark), FileReadAllLinesBenchmark.FileReadAllLinesBenchmark.Count),
@@ -27,13 +29,13 @@ public static class BenchmarkValues
 
     public static Benchmark Benchmark { get; set; } = Benchmarks[0];
 
-    public static SearchValues<byte> AsciiWhitespaceSearch = SearchValues.Create((ReadOnlySpan<byte>)[9, 10, 11, 12, 13, 32, 194, 225, 226, 227]);
-    
-    public static SearchValues<byte> CharWhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars());
+    public static SearchValues<byte> WhitespaceSearchAscii = SearchValues.Create((ReadOnlySpan<byte>)[9, 10, 11, 12, 13, 32, 194, 225, 226, 227]);
 
-    public static byte[] GetWhiteSpaceChars()
+    public static SearchValues<char> WhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars().AsSpan());
+
+    public static WhiteSpaceValues GetWhiteSpaceChars()
     {
-        byte[] whitespace = new byte[25];
+        WhiteSpaceValues whitespace = new();
         char c = Char.MinValue;
         int index = 0;
 
@@ -41,8 +43,7 @@ public static class BenchmarkValues
         {
             if (Char.IsWhiteSpace(c))
             {
-                whitespace[index] = (byte)(int)c;
-                index++;
+                whitespace[index++] = c;
             }
 
             c++;
@@ -57,3 +58,13 @@ public record Benchmark(string Name, Func<string, Count> Test);
 public record struct BenchmarkResult(int Pass, string Benchmark, TimeSpan Duration, Count Counts);
 
 public record struct Count(int Lines, int Words, int Bytes, string File);
+
+[InlineArray(Length)]
+public struct WhiteSpaceValues
+{
+    private const int Length = 25;
+    char _element;
+
+    [UnscopedRef]
+    public Span<char> AsSpan() => MemoryMarshal.CreateSpan<char>(ref _element, Length);
+}
