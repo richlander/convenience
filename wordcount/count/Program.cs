@@ -8,7 +8,8 @@ List<Func<string, Count>> counters =
 [
     FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count,
     FileOpenHandleMultiByteBenchmark.FileOpenHandleMultiByteBenchmark.Count,
-    FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count
+    FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count,
+    FileOpenTextReadLineSearchValuesBenchmark.FileOpenTextReadLineSearchValuesBenchmark.Count
 ];
 
 var counter = counters[counterIndex];
