@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics;
 using BenchmarkData;
 
 namespace FileOpenHandleBenchmark;
@@ -7,16 +8,13 @@ public static class FileOpenHandleBenchmark
 {
     public static Count Count(string path)
     {
-        const byte NEWLINE = (byte)'\n';
-        const byte CARRIAGE_RETURN = (byte)'\r';
-        const byte SPACE = (byte)' ';
-
         int wordCount = 0, lineCount = 0, byteCount = 0;
         bool wasSpace = true;
 
-        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
+        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
 
+        // Read content in chunks, in buffer, at count lenght, starting at byteCount
         int count = 0;
         while ((count = RandomAccess.Read(handle, buffer, byteCount)) > 0)
         {
@@ -25,22 +23,27 @@ public static class FileOpenHandleBenchmark
             
             while (bytes.Length > 0)
             {
-                if (bytes[0] is SPACE && char.IsAscii((char)bytes[0]))
+                char c = (char)bytes[0];
+
+                if (char.IsWhiteSpace(c))
                 {
-                    wasSpace = true;
+                    if (c is ' ')
+                    {
+                        wasSpace = true;
+                    }
+                    else if (c is '\n')
+                    {
+                        wasSpace = true;
+                        lineCount++;                      
+                    }
+                    else if (c is '\r')
+                    {
+                    }
+                    else
+                    {
+                        wasSpace = true;
+                    }
                 }
-                else if (bytes[0] is NEWLINE && char.IsAscii((char)bytes[0]))
-                {
-                    wasSpace = true;
-                    lineCount++;
-                }
-                else if (bytes[0] is CARRIAGE_RETURN && char.IsAscii((char)bytes[0]))
-                {
-                }
-                // else if (char.IsWhiteSpace((char)bytes[0]))
-                // {
-                //     wasSpace = true;
-                // }
                 else if (wasSpace)
                 {
                     wasSpace = false;

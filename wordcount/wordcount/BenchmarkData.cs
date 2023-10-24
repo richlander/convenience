@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Net.NetworkInformation;
 
 namespace BenchmarkData;
@@ -26,19 +27,21 @@ public static class BenchmarkValues
 
     public static Benchmark Benchmark { get; set; } = Benchmarks[0];
 
-    public static byte[] Whitespace { get; set; } = GetWhiteSpaceChars();
+    public static SearchValues<byte> AsciiWhitespaceSearch = SearchValues.Create((ReadOnlySpan<byte>)[9, 10, 11, 12, 13, 32, 194, 225, 226, 227]);
+    
+    public static SearchValues<byte> CharWhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars());
 
     public static byte[] GetWhiteSpaceChars()
     {
-        byte[] whitespace = new byte[8];
+        byte[] whitespace = new byte[25];
         char c = Char.MinValue;
         int index = 0;
 
-        while (c < 256)
+        while (c < Char.MaxValue)
         {
             if (Char.IsWhiteSpace(c))
             {
-                whitespace[index] = (byte)c;
+                whitespace[index] = (byte)(int)c;
                 index++;
             }
 

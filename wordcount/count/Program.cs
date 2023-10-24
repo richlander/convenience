@@ -1,10 +1,11 @@
-﻿using WordCount;
+﻿using BenchmarkData;
+
 
 string path = args.Length > 0 ? args[0] : "";
 
 if (File.Exists(path))
 {
-    var count = FileOpenHandleSearchValues.Count(path);
+    var count = FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count(path);
     PrintCount(count);
 }
 else if (Directory.Exists(path))
@@ -13,7 +14,7 @@ else if (Directory.Exists(path))
 
     foreach (var file in Directory.EnumerateFiles(path).Order())
     {
-        var count = FileOpenHandleSearchValues.Count(file);
+        var count = FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count(file);
         PrintCount(count);
 
         lineCount += count.Lines;
