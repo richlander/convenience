@@ -1,6 +1,6 @@
-
-
 using System.Buffers;
+using System.Linq.Expressions;
+using System.Runtime.CompilerServices;
 using BenchmarkData;
 
 namespace FileOpenHandleBenchmark;
@@ -9,18 +9,13 @@ public static class FileOpenHandleBenchmark
 {
     public static Count Count(string path)
     {
-        const byte NEWLINE = (byte)'\n';
-        const byte CARRIAGE_RETURN = (byte)'\r';
-        const byte SPACE = (byte)' ';
-        ReadOnlySpan<byte> searchValues = [SPACE, NEWLINE];
-
-
         int wordCount = 0, lineCount = 0, byteCount = 0;
         bool wasSpace = true;
 
-        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
+        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
 
+        // Read content in chunks, in buffer, at count lenght, starting at byteCount
         int count = 0;
         while ((count = RandomAccess.Read(handle, buffer, byteCount)) > 0)
         {
@@ -29,23 +24,26 @@ public static class FileOpenHandleBenchmark
             
             while (bytes.Length > 0)
             {
-                if (bytes[0] is SPACE)
+                char c = (char)bytes[0];
+
+                if (char.IsWhiteSpace(c))
                 {
-                    wasSpace = true;
-                    bytes = bytes.Slice(1);
-                    continue;
-                }
-                else if (bytes[0] is CARRIAGE_RETURN)
-                {
-                    bytes = bytes.Slice(1);
-                    continue;
-                }
-                else if (bytes[0] is NEWLINE)
-                {
-                    wasSpace = true;
-                    bytes = bytes.Slice(1);
-                    lineCount++;
-                    continue;
+                    if (c is ' ')
+                    {
+                        wasSpace = true;
+                    }
+                    else if (c is '\n')
+                    {
+                        wasSpace = true;
+                        lineCount++;                      
+                    }
+                    else if (c is '\r')
+                    {
+                    }
+                    else
+                    {
+                        wasSpace = true;
+                    }
                 }
                 else if (wasSpace)
                 {
@@ -53,31 +51,7 @@ public static class FileOpenHandleBenchmark
                     wordCount++;
                 }
 
-                int nextIndex = 0;
-                int indexOf = bytes.IndexOfAny(searchValues);
-
-                if (indexOf > -1)
-                {
-                    wasSpace = true;
-                    nextIndex = indexOf + 1;
-
-                    if (bytes[indexOf] is NEWLINE)
-                    {
-                        lineCount++;       
-                    }
-                }
-                else
-                {
-                    if (wasSpace)
-                    {
-                        wordCount++;
-                    }
-
-                    wasSpace = false;
-                    nextIndex = bytes.Length;
-                }
-
-                bytes = bytes.Slice(nextIndex);
+                bytes = bytes.Slice(1);
             }
         }
 

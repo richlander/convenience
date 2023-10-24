@@ -2,9 +2,9 @@
 using System.Buffers;
 using BenchmarkData;
 
-namespace FileOpenTextCharBenchmark;
+namespace FileOpenTextCharSearchValuesBenchmark;
 
-public static class FileOpenTextCharBenchmark
+public static class FileOpenTextCharSearchValuesBenchmark
 {
     public static Count Count(string path)
     {
@@ -42,11 +42,31 @@ public static class FileOpenTextCharBenchmark
                     {
                         wasSpace = true;
                     }
+
+                    chars = chars.Slice(1);
+                    continue;
                 }
                 else if (wasSpace)
                 {
                     wasSpace = false;
                     wordCount++;
+                }
+
+                if (chars.Length > 8)
+                {
+                    int index = chars.Slice(1, 8).IndexOfAny(BenchmarkValues.WhitespaceSearch);
+
+                    if (index > -1)
+                    {
+                        if (chars[index + 1] is '\n')
+                        {
+                            lineCount++;       
+                        }
+
+                        wasSpace = true;
+                        chars = chars.Slice(index + 2);
+                        continue;
+                    }
                 }
 
                 chars = chars.Slice(1);
