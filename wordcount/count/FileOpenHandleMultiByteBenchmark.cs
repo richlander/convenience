@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using BenchmarkData;
 
-namespace FileOpenHandleAsciiOnlyBenchmark;
+namespace FileOpenHandleMultiByteBenchmark;
 
-public static class FileOpenHandleAsciiOnlyBenchmark
+public static class FileOpenHandleMultiByteBenchmark
 {
     public static Count Count(string path)
     {
@@ -16,7 +16,7 @@ public static class FileOpenHandleAsciiOnlyBenchmark
 
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
         using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
-        ReadOnlySpan<byte> searchValues = [9, 11, 12, 194, 225, 226, 227];
+        ReadOnlySpan<byte> searchValues = [9, 11, 10, 12, 13, 194, 225, 226, 227];
 
         // Read content in chunks, in buffer, at count lenght, starting at byteCount
         int count = 0;
@@ -30,21 +30,24 @@ public static class FileOpenHandleAsciiOnlyBenchmark
                 byte b = bytes[0];
                 if (b < 128)
                 {
-                    if (b is (byte)' ') //32
+                    if (b is (byte)' ')
                     {
                         wasSpace = true;
-                    }
-                    else if (b is (byte)'\n') // 10
-                    {
-                        wasSpace = true;
-                        lineCount++;
-                    }
-                    else if (b is (byte)'\r') // 13
-                    {
                     }
                     else if (searchValues.Contains(b))
                     {
-                        wasSpace = true;
+                        if (b is (byte)'\n') // 10
+                        {
+                            wasSpace = true;
+                            lineCount++;
+                        }
+                        else if (b is (byte)'\r') // 13
+                        {
+                        }
+                        else
+                        {
+                            wasSpace = true;
+                        }
                     }
                     else if (wasSpace)
                     {

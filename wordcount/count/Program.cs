@@ -2,15 +2,16 @@
 using BenchmarkData;
 
 string path = args.Length > 0 ? args[0] : "";
+int counterIndex = args.Length > 1 && int.TryParse(args[1], out int val) ? val : 0;
 
 List<Func<string, Count>> counters =
 [
     FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count,
-    FileOpenHandleAsciiOnlyBenchmark.FileOpenHandleAsciiOnlyBenchmark.Count,
+    FileOpenHandleMultiByteBenchmark.FileOpenHandleMultiByteBenchmark.Count,
     FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count
 ];
 
-var counter = counters[2];
+var counter = counters[counterIndex];
 
 if (File.Exists(path))
 {
