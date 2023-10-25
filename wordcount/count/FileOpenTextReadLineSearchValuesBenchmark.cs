@@ -9,6 +9,7 @@ public static class FileOpenTextReadLineSearchValuesBenchmark
     {
         int wordCount = 0, lineCount = 0, charCount = 0;
         using StreamReader stream = File.OpenText(path);
+        ReadOnlySpan<char> whitespaceChars = BenchmarkData.BenchmarkValues.GetWhiteSpaceChars().ToArray();
 
         string? line = null;
         while ((line = stream.ReadLine()) is not null)
@@ -16,17 +17,17 @@ public static class FileOpenTextReadLineSearchValuesBenchmark
             lineCount++;
             charCount += line.Length;
             ReadOnlySpan<char> text = line.TrimStart();
+            int index = 0;
 
             if (text.Length is 0)
             {
                 continue;
             }
 
-            int index = 0;
             while ((index = text.IndexOfAny(BenchmarkValues.WhitespaceSearch)) > 0)
             {
                 wordCount++;
-                text = text.Slice(index).TrimStart();
+                text = text.Slice(index).TrimStart(whitespaceChars);
             }
 
             wordCount++;

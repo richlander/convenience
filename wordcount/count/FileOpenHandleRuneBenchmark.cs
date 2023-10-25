@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using BenchmarkData;
 
-namespace FileOpenHandleAsciiRuneBenchmark;
+namespace FileOpenHandleRuneBenchmark;
 
-public static class FileOpenHandleAsciiRuneBenchmark
+public static class FileOpenHandleRuneBenchmark
 {
     public static Count Count(string path)
     {
@@ -16,7 +16,6 @@ public static class FileOpenHandleAsciiRuneBenchmark
 
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
         using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
-        ReadOnlySpan<byte> searchValues = [9, 11, 10, 12, 13, 194, 225, 226, 227];
         int index = 0;
 
         // Read content in chunks, in buffer, at count lenght, starting at byteCount
@@ -28,40 +27,9 @@ public static class FileOpenHandleAsciiRuneBenchmark
 
             while (bytes.Length > 0)
             {
-                byte b = bytes[0];
-                if (b < 128)
-                {
-                    if (b is (byte)' ')
-                    {
-                        wasSpace = true;
-                    }
-                    else if (searchValues.Contains(b))
-                    {
-                        if (b is (byte)'\n') // 10
-                        {
-                            wasSpace = true;
-                            lineCount++;
-                        }
-                        else if (b is (byte)'\r') // 13
-                        {
-                        }
-                        else
-                        {
-                            wasSpace = true;
-                        }
-                    }
-                    else if (wasSpace)
-                    {
-                        wasSpace = false;
-                        wordCount++;
-                    }
-
-                    bytes = bytes.Slice(1);
-                    continue;
-                }
-                
                 var status = Rune.DecodeFromUtf8(bytes, out Rune rune, out int bytesConsumed);
 
+                // bad read due to low buffer length
                 if (status is not OperationStatus.Done && bytes.Length < 4)
                 {
                     break;
@@ -69,12 +37,17 @@ public static class FileOpenHandleAsciiRuneBenchmark
                 
                 if (Rune.IsWhiteSpace(rune))
                 {
+                    if (bytes[0] is (byte)'\n')
+                    {
+                        lineCount++;
+                    }
+
                     wasSpace = true;
                 }
                 else if (wasSpace)
                 {
-                    wasSpace = false;
                     wordCount++;
+                    wasSpace = false;
                 }
 
                 bytes = bytes.Slice(bytesConsumed);

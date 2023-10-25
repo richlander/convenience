@@ -6,10 +6,11 @@ int counterIndex = args.Length > 1 && int.TryParse(args[1], out int val) ? val :
 
 List<Func<string, Count>> counters =
 [
-    FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count,
-    FileOpenHandleAsciiRuneBenchmark.FileOpenHandleAsciiRuneBenchmark.Count,
+    FileOpenHandleRuneBenchmark.FileOpenHandleRuneBenchmark.Count,
+    FileOpenHandleAsciiCheatBenchmark.FileOpenHandleAsciiCheatBenchmark.Count,
     FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count,
-    FileOpenTextReadLineSearchValuesBenchmark.FileOpenTextReadLineSearchValuesBenchmark.Count
+    FileOpenTextReadLineSearchValuesBenchmark.FileOpenTextReadLineSearchValuesBenchmark.Count,
+    FileReadLinesBenchmark.FileReadLinesBenchmark.Count
 ];
 
 var counter = counters[counterIndex];

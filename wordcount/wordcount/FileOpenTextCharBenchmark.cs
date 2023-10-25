@@ -22,26 +22,14 @@ public static class FileOpenTextCharBenchmark
 
             while (chars.Length > 0)
             {
-                char c = chars[0];
-
-                if (char.IsWhiteSpace(c))
+                if (char.IsWhiteSpace(chars[0]))
                 {
-                    if (c is ' ')
+                    if (chars[0] is '\n')
                     {
-                        wasSpace = true;
-                    }
-                    else if (c is '\n')
-                    {
-                        wasSpace = true;
                         lineCount++;                      
                     }
-                    else if (c is '\r')
-                    {
-                    }
-                    else
-                    {
-                        wasSpace = true;
-                    }
+  
+                    wasSpace = true;
                 }
                 else if (wasSpace)
                 {

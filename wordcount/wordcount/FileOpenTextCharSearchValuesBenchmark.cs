@@ -22,27 +22,14 @@ public static class FileOpenTextCharSearchValuesBenchmark
 
             while (chars.Length > 0)
             {
-                char c = chars[0];
-
-                if (char.IsWhiteSpace(c))
+                if (char.IsWhiteSpace(chars[0]))
                 {
-                    if (c is ' ')
+                    if (chars[0] is '\n')
                     {
-                        wasSpace = true;
-                    }
-                    else if (c is '\n')
-                    {
-                        wasSpace = true;
                         lineCount++;                      
                     }
-                    else if (c is '\r')
-                    {
-                    }
-                    else
-                    {
-                        wasSpace = true;
-                    }
 
+                    wasSpace = true;
                     chars = chars.Slice(1);
                     continue;
                 }
@@ -50,26 +37,26 @@ public static class FileOpenTextCharSearchValuesBenchmark
                 {
                     wasSpace = false;
                     wordCount++;
+                    chars = chars.Slice(1);
                 }
 
-                if (chars.Length > 16)
+                int index = chars.IndexOfAny(BenchmarkValues.WhitespaceSearch);
+
+                if (index > -1)
                 {
-                    int index = chars.Slice(1, 16).IndexOfAny(BenchmarkValues.WhitespaceSearch);
-
-                    if (index > -1)
+                    if (chars[index] is '\n')
                     {
-                        if (chars[index + 1] is '\n')
-                        {
-                            lineCount++;       
-                        }
-
-                        wasSpace = true;
-                        chars = chars.Slice(index + 2);
-                        continue;
+                        lineCount++;       
                     }
-                }
 
-                chars = chars.Slice(1);
+                    wasSpace = true;
+                    chars = chars.Slice(index + 1);
+                }
+                else
+                {
+                    wasSpace = false;
+                    chars = [];
+                }
             }
         }
 

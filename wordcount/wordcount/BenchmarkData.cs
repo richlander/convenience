@@ -18,8 +18,8 @@ public static class BenchmarkValues
 
     public static List<Benchmark> Benchmarks => 
         [
-            new(nameof(FileOpenHandleBenchmark), FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count),
             new(nameof(FileOpenHandleRuneBenchmark), FileOpenHandleRuneBenchmark.FileOpenHandleRuneBenchmark.Count),
+            new(nameof(FileOpenHandleAsciiCheatBenchmark), FileOpenHandleAsciiCheatBenchmark.FileOpenHandleAsciiCheatBenchmark.Count),
             new(nameof(FileOpenRuneBenchmark), FileOpenRuneBenchmark.FileOpenRuneBenchmark.Count),
             new(nameof(FileOpenTextCharBenchmark), FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count),
             new(nameof(FileOpenTextCharSearchValuesBenchmark), FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count),
@@ -33,25 +33,21 @@ public static class BenchmarkValues
 
     public static SearchValues<byte> WhitespaceSearchAscii = SearchValues.Create((ReadOnlySpan<byte>)[9, 10, 11, 12, 13, 32, 194, 225, 226, 227]);
 
-    public static SearchValues<char> WhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars().AsSpan());
+    public static SearchValues<char> WhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars().ToArray());
 
-    public static WhiteSpaceValues GetWhiteSpaceChars()
+    public static IEnumerable<char> GetWhiteSpaceChars()
     {
-        WhiteSpaceValues whitespace = new();
         char c = Char.MinValue;
-        int index = 0;
 
-        while (c < Char.MaxValue)
+        while (c < char.MaxValue)
         {
             if (Char.IsWhiteSpace(c))
             {
-                whitespace[index++] = c;
+                yield return c;
             }
 
             c++;
         }
-
-        return whitespace;
     }
 }
 
@@ -60,13 +56,3 @@ public record Benchmark(string Name, Func<string, Count> Test);
 public record struct BenchmarkResult(int Pass, string Benchmark, TimeSpan Duration, Count Counts);
 
 public record struct Count(int Lines, int Words, int Bytes, string File);
-
-[InlineArray(Length)]
-public struct WhiteSpaceValues
-{
-    private const int Length = 25;
-    char _element;
-
-    [UnscopedRef]
-    public Span<char> AsSpan() => MemoryMarshal.CreateSpan<char>(ref _element, Length);
-}
