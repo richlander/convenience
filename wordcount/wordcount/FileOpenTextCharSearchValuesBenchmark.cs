@@ -52,9 +52,9 @@ public static class FileOpenTextCharSearchValuesBenchmark
                     wordCount++;
                 }
 
-                if (chars.Length > 8)
+                if (chars.Length > 16)
                 {
-                    int index = chars.Slice(1, 8).IndexOfAny(BenchmarkValues.WhitespaceSearch);
+                    int index = chars.Slice(1, 16).IndexOfAny(BenchmarkValues.WhitespaceSearch);
 
                     if (index > -1)
                     {

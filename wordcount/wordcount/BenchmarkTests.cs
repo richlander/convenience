@@ -6,17 +6,18 @@ namespace BenchmarkTests;
 // [MemoryDiagnoser]
 public class BenchmarkTests
 {
-    [Params("Clarissa_Harlowe/summary.md", "Clarissa_Harlowe/clarissa_volume1.txt")]
+    //[Params("Clarissa_Harlowe/summary.md","Clarissa_Harlowe/clarissa_volume1.txt")]
+    [Params("Clarissa_Harlowe/clarissa_volume1.txt")]
     public string FilePath { get; set; } = "";
 
     [Benchmark(Baseline = true)]
     public void FileOpenHandle() => FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count(FilePath);
 
     [Benchmark]
-    public void FileOpenHandleAsciiOnly() => FileOpenHandleMultiByteBenchmark.FileOpenHandleMultiByteBenchmark.Count(FilePath);
+    public void FileOpenHandleRune() => FileOpenHandleRuneBenchmark.FileOpenHandleRuneBenchmark.Count(FilePath);
 
     [Benchmark]
-    public void FileOpen() => FileOpenBenchmark.FileOpenBenchmark.Count(FilePath);
+    public void FileOpenRune() => FileOpenRuneBenchmark.FileOpenRuneBenchmark.Count(FilePath);
 
     [Benchmark]
     public void FileOpenTextCharSearchValues() => FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count(FilePath);

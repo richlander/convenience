@@ -7,7 +7,7 @@ int counterIndex = args.Length > 1 && int.TryParse(args[1], out int val) ? val :
 List<Func<string, Count>> counters =
 [
     FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count,
-    FileOpenHandleMultiByteBenchmark.FileOpenHandleMultiByteBenchmark.Count,
+    FileOpenHandleAsciiRuneBenchmark.FileOpenHandleAsciiRuneBenchmark.Count,
     FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count,
     FileOpenTextReadLineSearchValuesBenchmark.FileOpenTextReadLineSearchValuesBenchmark.Count
 ];

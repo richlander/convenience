@@ -19,13 +19,13 @@ public static class BenchmarkValues
     public static List<Benchmark> Benchmarks => 
         [
             new(nameof(FileOpenHandleBenchmark), FileOpenHandleBenchmark.FileOpenHandleBenchmark.Count),
-            new(nameof(FileOpenHandleMultiByteBenchmark), FileOpenHandleMultiByteBenchmark.FileOpenHandleMultiByteBenchmark.Count),
-            new(nameof(FileOpenBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
+            new(nameof(FileOpenHandleRuneBenchmark), FileOpenHandleRuneBenchmark.FileOpenHandleRuneBenchmark.Count),
+            new(nameof(FileOpenRuneBenchmark), FileOpenRuneBenchmark.FileOpenRuneBenchmark.Count),
             new(nameof(FileOpenTextCharBenchmark), FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count),
             new(nameof(FileOpenTextCharSearchValuesBenchmark), FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count),
             new(nameof(FileOpenTextReadLineBenchmark), FileOpenTextReadLineBenchmark.FileOpenTextReadLineBenchmark.Count),
             new(nameof(FileOpenTextReadLineSearchValuesBenchmark), FileOpenTextReadLineSearchValuesBenchmark.FileOpenTextReadLineSearchValuesBenchmark.Count),
-            new(nameof(FileReadLinesBenchmark), FileOpenBenchmark.FileOpenBenchmark.Count),
+            new(nameof(FileReadLinesBenchmark), FileOpenRuneBenchmark.FileOpenRuneBenchmark.Count),
             new(nameof(FileReadAllLinesBenchmark), FileReadAllLinesBenchmark.FileReadAllLinesBenchmark.Count),
         ];
 

@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using BenchmarkData;
 
-namespace FileOpenHandleMultiByteBenchmark;
+namespace FileOpenHandleAsciiRuneBenchmark;
 
-public static class FileOpenHandleMultiByteBenchmark
+public static class FileOpenHandleAsciiRuneBenchmark
 {
     public static Count Count(string path)
     {
@@ -17,14 +17,15 @@ public static class FileOpenHandleMultiByteBenchmark
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
         using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
         ReadOnlySpan<byte> searchValues = [9, 11, 10, 12, 13, 194, 225, 226, 227];
+        int index = 0;
 
         // Read content in chunks, in buffer, at count lenght, starting at byteCount
         int count = 0;
-        while ((count = RandomAccess.Read(handle, buffer, byteCount)) > 0)
+        while ((count = RandomAccess.Read(handle, buffer.AsSpan(index), byteCount)) > 0 || index > 0)
         {
             byteCount += count;
-            Span<byte> bytes = buffer.AsSpan(0, count);
-            
+            Span<byte> bytes = buffer.AsSpan(0, count + index);
+
             while (bytes.Length > 0)
             {
                 byte b = bytes[0];
@@ -59,28 +60,27 @@ public static class FileOpenHandleMultiByteBenchmark
                     continue;
                 }
                 
-                char c = (char)b;
-                if (bytes.Length > 2)
-                {
-                    var chars = Encoding.UTF8.GetChars(bytes.Slice(0, 3).ToArray());
-                    c = chars[0];
-                }
+                var status = Rune.DecodeFromUtf8(bytes, out Rune rune, out int bytesConsumed);
 
-                if (char.IsWhiteSpace(c))
+                if (status is not OperationStatus.Done && bytes.Length < 4)
                 {
-                    wasSpace = true;
-                    bytes = bytes.Slice(3);
-                    continue;
+                    break;
                 }
                 
-                if (wasSpace)
+                if (Rune.IsWhiteSpace(rune))
+                {
+                    wasSpace = true;
+                }
+                else if (wasSpace)
                 {
                     wasSpace = false;
                     wordCount++;
                 }
 
-                bytes = bytes.Slice(1);
+                bytes = bytes.Slice(bytesConsumed);
             }
+
+            index = bytes.Length;
         }
 
         ArrayPool<byte>.Shared.Return(buffer);
