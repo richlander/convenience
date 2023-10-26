@@ -24,14 +24,17 @@ public static class FileOpenHandleRuneBenchmark
         {
             byteCount += count;
             Span<byte> bytes = buffer.AsSpan(0, count + index);
+            index = 0;
 
             while (bytes.Length > 0)
             {
                 var status = Rune.DecodeFromUtf8(bytes, out Rune rune, out int bytesConsumed);
 
                 // bad read due to low buffer length
-                if (status is not OperationStatus.Done && bytes.Length < 4)
+                if (status == OperationStatus.NeedMoreData && count > 0)
                 {
+                    bytes[..bytesConsumed].CopyTo(buffer); // move the partial Rune to the start of the buffer before next read
+                    index = bytesConsumed;
                     break;
                 }
                 
@@ -52,8 +55,6 @@ public static class FileOpenHandleRuneBenchmark
 
                 bytes = bytes.Slice(bytesConsumed);
             }
-
-            index = bytes.Length;
         }
 
         ArrayPool<byte>.Shared.Return(buffer);

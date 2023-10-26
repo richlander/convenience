@@ -33,8 +33,8 @@ public static class FileOpenTextCharBenchmark
                 }
                 else if (wasSpace)
                 {
-                    wasSpace = false;
                     wordCount++;
+                    wasSpace = false;
                 }
 
                 chars = chars.Slice(1);
