@@ -15,7 +15,8 @@ public static class FileOpenTextReadLineSearchValuesBenchmark
         {
             lineCount++;
             charCount += line.Length;
-            ReadOnlySpan<char> text = line.TrimStart();
+            ReadOnlySpan<char> text = line.AsSpan().TrimStart();
+
             int index = 0;
 
             if (text.Length is 0)
