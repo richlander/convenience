@@ -6,8 +6,8 @@ namespace BenchmarkTests;
 [MemoryDiagnoser]
 public class BenchmarkTests
 {
-    //[Params("Clarissa_Harlowe/summary.md","Clarissa_Harlowe/clarissa_volume1.txt")]
-    [Params("Clarissa_Harlowe/clarissa_volume1.txt")]
+    [Params("Clarissa_Harlowe/summary.md","Clarissa_Harlowe/clarissa_volume1.txt")]
+    // [Params("Clarissa_Harlowe/clarissa_volume1.txt")]
     public string FilePath { get; set; } = "";
 
     [Benchmark(Baseline = true)]

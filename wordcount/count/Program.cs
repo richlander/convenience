@@ -4,20 +4,12 @@ using BenchmarkData;
 string path = args.Length > 0 ? args[0] : "";
 int counterIndex = args.Length > 1 && int.TryParse(args[1], out int val) ? val : 0;
 
-List<Func<string, Count>> counters =
-[
-    FileOpenHandleRuneBenchmark.FileOpenHandleRuneBenchmark.Count,
-    FileOpenHandleAsciiCheatBenchmark.FileOpenHandleAsciiCheatBenchmark.Count,
-    FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count,
-    FileOpenTextReadLineSearchValuesBenchmark.FileOpenTextReadLineSearchValuesBenchmark.Count,
-    FileReadLinesBenchmark.FileReadLinesBenchmark.Count
-];
-
-var counter = counters[counterIndex];
+var benchmark = BenchmarkValues.Benchmarks[counterIndex];
+Console.WriteLine(benchmark.Name);
 
 if (File.Exists(path))
 {
-    var count = counter(path);
+    var count = benchmark.Test(path);
     PrintCount(count);
 }
 else if (Directory.Exists(path))
@@ -26,7 +18,7 @@ else if (Directory.Exists(path))
 
     foreach (var file in Directory.EnumerateFiles(path).Order())
     {
-        var count = counter(file);
+        var count = benchmark.Test(file);
         PrintCount(count);
 
         lineCount += count.Lines;
