@@ -8,7 +8,7 @@ public static class FileOpenRuneBenchmark
 {
     public static Count Count(string path)
     {
-        int wordCount = 0, lineCount = 0, byteCount = 0;
+        long wordCount = 0, lineCount = 0, byteCount = 0;
         bool wasSpace = true;
         int index = 0;
 

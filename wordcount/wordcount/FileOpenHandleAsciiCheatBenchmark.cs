@@ -12,7 +12,7 @@ public static class FileOpenHandleAsciiCheatBenchmark
         const byte SPACE = (byte)' ';
         ReadOnlySpan<byte> searchValues = [SPACE, NEWLINE];
 
-        int wordCount = 0, lineCount = 0, byteCount = 0;
+        long wordCount = 0, lineCount = 0, byteCount = 0;
         bool wasSpace = true;
 
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);

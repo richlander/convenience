@@ -14,7 +14,7 @@ if (File.Exists(path))
 }
 else if (Directory.Exists(path))
 {
-    int lineCount = 0, wordCount = 0, byteCount = 0;
+    long lineCount = 0, wordCount = 0, byteCount = 0;
 
     foreach (var file in Directory.EnumerateFiles(path).Order())
     {

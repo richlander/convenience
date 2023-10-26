@@ -7,7 +7,7 @@ public static class FileOpenTextReadLineBenchmark
 {
     public static Count Count(string path)
     {
-        int wordCount = 0, lineCount = 0, charCount = 0;
+        long wordCount = 0, lineCount = 0, charCount = 0;
         using StreamReader stream = File.OpenText(path);
 
         string? line = null;

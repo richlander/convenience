@@ -11,7 +11,7 @@ public static class FileOpenHandleRuneBenchmark
 {
     public static Count Count(string path)
     {
-        int wordCount = 0, lineCount = 0, byteCount = 0;
+        long wordCount = 0, lineCount = 0, byteCount = 0;
         bool wasSpace = true;
 
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);

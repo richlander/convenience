@@ -7,7 +7,8 @@ public static class FileOpenTextReadLineSearchValuesBenchmark
 {
     public static Count Count(string path)
     {
-        int wordCount = 0, lineCount = 0, charCount = 0;
+        long wordCount = 0, lineCount = 0, charCount = 0;
+        bool wasSpace = true;
         using StreamReader stream = File.OpenText(path);
         ReadOnlySpan<char> whitespaceChars = BenchmarkData.BenchmarkValues.GetWhiteSpaceChars().ToArray();
 
@@ -16,21 +17,46 @@ public static class FileOpenTextReadLineSearchValuesBenchmark
         {
             lineCount++;
             charCount += line.Length;
-            ReadOnlySpan<char> text = line.TrimStart();
-            int index = 0;
+            ReadOnlySpan<char> chars = line;
 
-            if (text.Length is 0)
+            while (chars.Length > 0)
             {
-                continue;
-            }
+                if (char.IsWhiteSpace(chars[0]))
+                {
+                    if (chars[0] is '\n')
+                    {
+                        lineCount++;                      
+                    }
 
-            while ((index = text.IndexOfAny(BenchmarkValues.WhitespaceSearch)) > 0)
-            {
-                wordCount++;
-                text = text.Slice(index).TrimStart(whitespaceChars);
-            }
+                    wasSpace = true;
+                    chars = chars.Slice(1);
+                    continue;
+                }
+                else if (wasSpace)
+                {
+                    wasSpace = false;
+                    wordCount++;
+                    chars = chars.Slice(1);
+                }
 
-            wordCount++;
+                int index = chars.IndexOfAny(BenchmarkValues.WhitespaceSearch);
+
+                if (index > -1)
+                {
+                    if (chars[index] is '\n')
+                    {
+                        lineCount++;       
+                    }
+
+                    wasSpace = true;
+                    chars = chars.Slice(index + 1);
+                }
+                else
+                {
+                    wasSpace = false;
+                    chars = [];
+                }
+            }
         }
 
         return new(lineCount, wordCount, charCount, path);

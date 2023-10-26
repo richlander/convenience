@@ -7,7 +7,7 @@ public static class FileReadLinesBenchmark
 {
     public static Count Count(string path)
     {
-        int wordCount = 0, lineCount = 0, charCount = 0;
+        long wordCount = 0, lineCount = 0, charCount = 0;
 
         foreach (var line in File.ReadLines(path))
         {

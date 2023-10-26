@@ -39,6 +39,6 @@ public static class BenchmarkValues
 
 }
 
-public record struct Count(int Lines, int Words, int Bytes, string File);
+public record struct Count(long Lines, long Words, long Bytes, string File);
 
 public record Benchmark(string Name, Func<string, Count> Test);

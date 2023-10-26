@@ -37,22 +37,13 @@ public static class BenchmarkValues
 
     public static IEnumerable<char> GetWhiteSpaceChars()
     {
-        char c = Char.MinValue;
-
-        while (c < char.MaxValue)
+        for (int i = char.MinValue; i <= char.MaxValue; i++)
         {
-            if (Char.IsWhiteSpace(c))
-            {
-                yield return c;
-            }
-
-            c++;
+            if (char.IsWhiteSpace((char)i)) { yield return (char)i; }
         }
     }
 }
 
 public record Benchmark(string Name, Func<string, Count> Test);
 
-public record struct BenchmarkResult(int Pass, string Benchmark, TimeSpan Duration, Count Counts);
-
-public record struct Count(int Lines, int Words, int Bytes, string File);
+public record struct Count(long Lines, long Words, long Bytes, string File);

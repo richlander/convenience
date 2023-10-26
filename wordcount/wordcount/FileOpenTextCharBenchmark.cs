@@ -8,7 +8,7 @@ public static class FileOpenTextCharBenchmark
 {
     public static Count Count(string path)
     {
-        int wordCount = 0, lineCount = 0, charCount = 0;
+        long wordCount = 0, lineCount = 0, charCount = 0;
         bool wasSpace = true;
 
         char[] buffer = ArrayPool<char>.Shared.Rent(BenchmarkValues.Size);
