@@ -4,6 +4,9 @@ using BenchmarkData;
 
 namespace FileOpenHandleAsciiCheatBenchmark;
 
+// This benchmark is a cheat (hence the type name) / novelty.
+// It is indended to show how fast this algorithm can be made
+// if you have controlled input.
 public static class FileOpenHandleAsciiCheatBenchmark
 {
     public static Count Count(string path)
