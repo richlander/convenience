@@ -37,7 +37,7 @@ public static class FileOpenHandleRuneBenchmark
                 
                 if (Rune.IsWhiteSpace(rune))
                 {
-                    if (bytes[0] is (byte)'\n')
+                    if (rune.Value is '\n')
                     {
                         lineCount++;
                     }
