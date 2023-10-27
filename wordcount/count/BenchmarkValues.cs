@@ -9,8 +9,6 @@ public static class BenchmarkValues
 {
     public static int Size => 16 * 1024;
 
-    public static SearchValues<byte> WhitespaceSearchAscii = SearchValues.Create((ReadOnlySpan<byte>)[9, 10, 11, 12, 13, 32, 194, 225, 226, 227]);
-
     public static SearchValues<char> WhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars().ToArray());
 
     public static IEnumerable<char> GetWhiteSpaceChars()

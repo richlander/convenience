@@ -15,7 +15,7 @@ public static class Runner
 
     public static void RunMultiFile(string path)
     {
-        int totalLines = 0, totalWords = 0, totalBytes = 0;
+        long totalLines = 0, totalWords = 0, totalBytes = 0;
 
         foreach (var file in Directory.EnumerateFiles(path).Order())
         {
