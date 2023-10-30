@@ -15,11 +15,11 @@ public static class BenchmarkValues
 
     public static string DirectoryPath => Path.Combine(Path.GetDirectoryName(typeof(BenchmarkValues).Assembly.Location)!, "Clarissa_Harlowe");
 
-    public static int Size => 16 * 1024;
+    public static int Size => 4 * 1024;
 
     public static List<Benchmark> Benchmarks => 
         [
-            new(nameof(FileOpenCharsBenchmark), FileOpenCharsBenchmark.FileOpenCharsBenchmark.Count),
+            new(nameof(FileOpenCharSearchValuesBenchmark), FileOpenCharSearchValuesBenchmark.FileOpenCharSearchValuesBenchmark.Count),
             new(nameof(FileOpenHandleCharSearchValuesBenchmark), FileOpenHandleCharSearchValuesBenchmark.FileOpenHandleCharSearchValuesBenchmark.Count),
             new(nameof(FileOpenHandleRuneBenchmark), FileOpenHandleRuneBenchmark.FileOpenHandleRuneBenchmark.Count),
             new(nameof(FileOpenTextCharBenchmark), FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count),
@@ -35,12 +35,13 @@ public static class BenchmarkValues
 
     public static SearchValues<char> WhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars().ToArray());
 
-    public static SearchValues<char> WhitespaceSearchNoCRLF = SearchValues.Create(GetWhiteSpaceChars().SkipWhile(c => c is '\n' or '\r').ToArray());
+    public static SearchValues<char> WhitespaceSearchNoCRLF = SearchValues.Create(GetWhiteSpaceChars(true).ToArray());
 
-    public static IEnumerable<char> GetWhiteSpaceChars()
+    public static IEnumerable<char> GetWhiteSpaceChars(bool skipCRLF = false)
     {
         for (int i = char.MinValue; i <= char.MaxValue; i++)
         {
+            if (skipCRLF && (char)i is '\n' or '\r') {continue;}
             if (char.IsWhiteSpace((char)i)) { yield return (char)i; }
         }
     }

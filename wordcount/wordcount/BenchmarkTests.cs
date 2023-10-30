@@ -10,10 +10,10 @@ public class BenchmarkTests
     public string FilePath { get; set; } = "";
 
     [Benchmark(Baseline = true)]
-    public void FileOpenChars() => FileOpenCharsBenchmark.FileOpenCharsBenchmark.Count(FilePath);
+    public void FileOpenHandleCharSearchValues() => FileOpenHandleCharSearchValuesBenchmark.FileOpenHandleCharSearchValuesBenchmark.Count(FilePath);
 
     [Benchmark]
-    public void FileOpenHandleChars() => FileOpenHandleCharSearchValuesBenchmark.FileOpenHandleCharSearchValuesBenchmark.Count(FilePath);
+    public void FileOpenCharSearchValues() => FileOpenCharSearchValuesBenchmark.FileOpenCharSearchValuesBenchmark.Count(FilePath);
 
     [Benchmark]
     public void FileOpenHandleRune() => FileOpenHandleRuneBenchmark.FileOpenHandleRuneBenchmark.Count(FilePath);

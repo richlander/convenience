@@ -16,7 +16,6 @@ public static class FileOpenTextReadLineSearchValuesBenchmark
             lineCount++;
             charCount += line.Length;
             ReadOnlySpan<char> text = line.AsSpan().TrimStart();
-
             int index = 0;
 
             if (text.Length is 0)
@@ -24,7 +23,7 @@ public static class FileOpenTextReadLineSearchValuesBenchmark
                 continue;
             }
 
-            while ((index = text.IndexOfAny(BenchmarkValues.WhitespaceSearch)) > 0)
+            while ((index = text.IndexOfAny(BenchmarkValues.WhitespaceSearchNoCRLF)) > 0)
             {
                 wordCount++;
                 text = text.Slice(index).TrimStart();

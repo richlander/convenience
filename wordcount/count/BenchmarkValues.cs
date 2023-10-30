@@ -7,34 +7,30 @@ namespace BenchmarkData;
 
 public static class BenchmarkValues
 {
-    public static int Size => 16 * 1024;
+    public static int Size => 4 * 1024;
 
     public static SearchValues<char> WhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars().ToArray());
 
-    public static IEnumerable<char> GetWhiteSpaceChars()
+    public static SearchValues<char> WhitespaceSearchNoCRLF = SearchValues.Create(GetWhiteSpaceChars(true).ToArray());
+
+    public static IEnumerable<char> GetWhiteSpaceChars(bool skipCRLF = false)
     {
-        char c = Char.MinValue;
-
-        while (c < char.MaxValue)
+        for (int i = char.MinValue; i <= char.MaxValue; i++)
         {
-            if (Char.IsWhiteSpace(c))
-            {
-                yield return c;
-            }
-
-            c++;
+            if (skipCRLF && (char)i is '\n' or '\r') {continue;}
+            if (char.IsWhiteSpace((char)i)) { yield return (char)i; }
         }
     }
 
-        public static List<Benchmark> Benchmarks => 
-        [
-            new(nameof(FileOpenCharSearchValuesBenchmark), FileOpenCharSearchValuesBenchmark.FileOpenCharSearchValuesBenchmark.Count),
-            new(nameof(FileOpenHandleCharSearchValuesBenchmark), FileOpenHandleCharSearchValuesBenchmark.FileOpenHandleCharSearchValuesBenchmark.Count),
-            new(nameof(FileOpenTextCharSearchValuesBenchmark), FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count),
-            new(nameof(FileOpenTextReadLineSearchValuesBenchmark), FileOpenTextReadLineSearchValuesBenchmark.FileOpenTextReadLineSearchValuesBenchmark.Count),
-            new(nameof(FileReadLinesBenchmark), FileReadLinesBenchmark.FileReadLinesBenchmark.Count),
-            new(nameof(FileOpenHandleAsciiCheatBenchmark), FileOpenHandleAsciiCheatBenchmark.FileOpenHandleAsciiCheatBenchmark.Count),
-        ];
+    public static List<Benchmark> Benchmarks => 
+    [
+        new(nameof(FileOpenHandleCharSearchValuesBenchmark), FileOpenHandleCharSearchValuesBenchmark.FileOpenHandleCharSearchValuesBenchmark.Count),
+        new(nameof(FileOpenCharSearchValuesBenchmark), FileOpenCharSearchValuesBenchmark.FileOpenCharSearchValuesBenchmark.Count),
+        new(nameof(FileOpenTextCharSearchValuesBenchmark), FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count),
+        new(nameof(FileOpenTextReadLineSearchValuesBenchmark), FileOpenTextReadLineSearchValuesBenchmark.FileOpenTextReadLineSearchValuesBenchmark.Count),
+        new(nameof(FileReadLinesBenchmark), FileReadLinesBenchmark.FileReadLinesBenchmark.Count),
+        new(nameof(FileOpenHandleAsciiCheatBenchmark), FileOpenHandleAsciiCheatBenchmark.FileOpenHandleAsciiCheatBenchmark.Count),
+    ];
 
 }
 

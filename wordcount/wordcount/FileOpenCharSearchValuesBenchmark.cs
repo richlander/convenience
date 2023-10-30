@@ -2,12 +2,10 @@ using System.Buffers;
 using System.Text;
 using BenchmarkData;
 
-namespace FileOpenCharsBenchmark;
+namespace FileOpenCharSearchValuesBenchmark;
 
-public static class FileOpenCharsBenchmark
+public static class FileOpenCharSearchValuesBenchmark
 {
-    private const int BufferSize = 4 * 1024;  // Byte buffer size
-
     public static Count Count(string path)
     {
         long wordCount = 0, lineCount = 0, byteCount = 0;
@@ -15,10 +13,10 @@ public static class FileOpenCharsBenchmark
 
         Encoding encoding = Encoding.UTF8;
         Decoder decoder = encoding.GetDecoder();
-        int charBufferSize = encoding.GetMaxCharCount(BufferSize);
+        int charBufferSize = encoding.GetMaxCharCount(BenchmarkValues.Size);
 
         char[] charBuffer = ArrayPool<char>.Shared.Rent(charBufferSize);
-        byte[] buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
         using var stream = File.Open(path, FileMode.Open, FileAccess.Read);
 
         int count = 0;
