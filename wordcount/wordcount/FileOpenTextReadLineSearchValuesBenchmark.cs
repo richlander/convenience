@@ -23,7 +23,7 @@ public static class FileOpenTextReadLineSearchValuesBenchmark
                 continue;
             }
 
-            while ((index = text.IndexOfAny(BenchmarkValues.WhitespaceSearchNoCRLF)) > 0)
+            while ((index = text.IndexOfAny(BenchmarkValues.WhitespaceSearchValuesNoLineBreak)) > 0)
             {
                 wordCount++;
                 text = text.Slice(index).TrimStart();

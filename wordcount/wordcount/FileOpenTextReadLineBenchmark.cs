@@ -5,8 +5,6 @@ namespace FileOpenTextReadLineBenchmark;
 
 public static class FileOpenTextReadLineBenchmark
 {
-    private static char[] WhitespaceValuesNoCRLF = BenchmarkValues.GetWhiteSpaceChars(true).ToArray();
-
     public static Count Count(string path)
     {
         long wordCount = 0, lineCount = 0, charCount = 0;
@@ -17,21 +15,19 @@ public static class FileOpenTextReadLineBenchmark
         {
             lineCount++;
             charCount += line.Length;
-            ReadOnlySpan<char> text = line.AsSpan().TrimStart();
-            int index = 0;
+            bool wasSpace = true;
 
-            if (text.Length is 0)
+            foreach (var c in line)
             {
-                continue;
-            }
+                bool isSpace = Char.IsWhiteSpace(c);
 
-            while ((index = text.IndexOfAny(WhitespaceValuesNoCRLF)) > 0)
-            {
-                wordCount++;
-                text = text.Slice(index).TrimStart();
-            }
+                if (!isSpace && wasSpace)
+                {
+                    wordCount++;
+                }
 
-            wordCount++;
+                wasSpace = isSpace;
+            }
         }
 
         return new(lineCount, wordCount, charCount, path);

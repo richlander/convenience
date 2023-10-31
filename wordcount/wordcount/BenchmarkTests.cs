@@ -22,17 +22,20 @@ public class BenchmarkTests
     public void FileOpenHandleAsciiCheat() => FileOpenHandleAsciiCheatBenchmark.FileOpenHandleAsciiCheatBenchmark.Count(FilePath);
 
     [Benchmark]
-    public void FileOpenTextCharSearchValues() => FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count(FilePath);
+    public void FileOpenTextChar() => FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count(FilePath);
 
     [Benchmark]
-    public void FileOpenTextChar() => FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count(FilePath);
+    public void FileOpenTextCharIndexOfAny() => FileOpenTextCharIndexOfAnyBenchmark.FileOpenTextCharIndexOfAnyBenchmark.Count(FilePath);
+
+    [Benchmark]
+    public void FileOpenTextCharSearchValues() => FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count(FilePath);
 
     [Benchmark]
     public void FileOpenTextReadLine() => FileOpenTextReadLineBenchmark.FileOpenTextReadLineBenchmark.Count(FilePath);
     
     [Benchmark]
     public void FileOpenTextReadLineSearchValues() => FileOpenTextReadLineSearchValuesBenchmark.FileOpenTextReadLineSearchValuesBenchmark.Count(FilePath);
-    
+        
     [Benchmark]
     public void FileReadLines() => FileReadLinesBenchmark.FileReadLinesBenchmark.Count(FilePath);
 

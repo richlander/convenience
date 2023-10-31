@@ -1,30 +1,24 @@
+
 using System.Buffers;
-using System.Text;
 using BenchmarkData;
 
-namespace FileOpenCharSearchValuesBenchmark;
+namespace FileOpenTextCharIndexOfAnyBenchmark;
 
-public static class FileOpenCharSearchValuesBenchmark
+public static class FileOpenTextCharIndexOfAnyBenchmark
 {
     public static Count Count(string path)
     {
-        long wordCount = 0, lineCount = 0, byteCount = 0;
+        long wordCount = 0, lineCount = 0, charCount = 0;
         bool wasSpace = true;
 
-        Encoding encoding = Encoding.UTF8;
-        Decoder decoder = encoding.GetDecoder();
-        int charBufferSize = encoding.GetMaxCharCount(BenchmarkValues.Size);
-
-        char[] charBuffer = ArrayPool<char>.Shared.Rent(charBufferSize);
-        byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
-        using var stream = File.Open(path, FileMode.Open, FileAccess.Read);
+        char[] buffer = ArrayPool<char>.Shared.Rent(BenchmarkValues.Size);
+        using var stream = File.OpenText(path);
 
         int count = 0;
         while ((count = stream.Read(buffer)) > 0)
-        {                
-            byteCount += count;
-            int charCount = decoder.GetChars(buffer.AsSpan(0, count), charBuffer, false);
-            ReadOnlySpan<char> chars = charBuffer.AsSpan(0, charCount);
+        {
+            charCount += count;
+            Span<char> chars = buffer.AsSpan(0, count);
 
             while (chars.Length > 0)
             {
@@ -46,7 +40,7 @@ public static class FileOpenCharSearchValuesBenchmark
                     chars = chars.Slice(1);
                 }
 
-                int index = chars.IndexOfAny(BenchmarkValues.WhitespaceSearchValues);
+                int index = chars.IndexOfAny(BenchmarkValues.WhitespaceValues);
 
                 if (index > -1)
                 {
@@ -66,8 +60,7 @@ public static class FileOpenCharSearchValuesBenchmark
             }
         }
 
-        ArrayPool<char>.Shared.Return(charBuffer);
-        ArrayPool<byte>.Shared.Return(buffer);
-        return new(lineCount, wordCount, byteCount, path);
+        ArrayPool<char>.Shared.Return(buffer);
+        return new(lineCount, wordCount, charCount, path);
     }
 }
