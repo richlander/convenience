@@ -9,7 +9,9 @@ public static class BenchmarkValues
 {
     public static int Size => 4 * 1024;
 
-    public static SearchValues<char> WhitespaceSearch = SearchValues.Create(GetWhiteSpaceChars().ToArray());
+    public static char[] WhitespaceValues = GetWhiteSpaceChars().ToArray();
+
+    public static SearchValues<char> WhitespaceSearchValues = SearchValues.Create(WhitespaceValues);
 
     public static IEnumerable<char> GetWhiteSpaceChars()
     {

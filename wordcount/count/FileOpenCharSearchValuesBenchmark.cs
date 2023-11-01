@@ -46,7 +46,7 @@ public static class FileOpenCharSearchValuesBenchmark
                     chars = chars.Slice(1);
                 }
 
-                int index = chars.IndexOfAny(BenchmarkValues.WhitespaceSearch);
+                int index = chars.IndexOfAny(BenchmarkValues.WhitespaceSearchValues);
 
                 if (index > -1)
                 {

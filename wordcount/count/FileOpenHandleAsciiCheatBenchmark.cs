@@ -21,7 +21,7 @@ public static class FileOpenHandleAsciiCheatBenchmark
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
         using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
 
-        // Read content in chunks, in buffer, at count length, starting at byteCount
+        // Read content in chunks, in buffer, at count lenght, starting at byteCount
         int count = 0;
         while ((count = RandomAccess.Read(handle, buffer, byteCount)) > 0)
         {
