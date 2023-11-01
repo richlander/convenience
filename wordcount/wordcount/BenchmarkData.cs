@@ -17,8 +17,6 @@ public static class BenchmarkValues
 
     public static int Size => 4 * 1024;
 
-    public static int[] LineBreakCharacters = [10, 11, 12, 13, 133, 8232, 8233];
-
     public static char[] WhitespaceValues = GetWhiteSpaceChars().ToArray();
 
     public static char[] WhitespaceValuesNoLineBreak = GetWhiteSpaceChars(true).ToArray();
@@ -44,11 +42,11 @@ public static class BenchmarkValues
 
     public static SearchValues<char> WhitespaceSearchValuesNoLineBreak = SearchValues.Create(WhitespaceValuesNoLineBreak);
 
-    public static IEnumerable<char> GetWhiteSpaceChars(bool skipCRLF = false)
+    public static IEnumerable<char> GetWhiteSpaceChars(bool skipControl = false)
     {
         for (int i = char.MinValue; i <= char.MaxValue; i++)
         {
-            if (skipCRLF && LineBreakCharacters.Contains(i)) {continue;}
+            if (skipControl && char.IsControl((char)i)) {continue;}
             if (char.IsWhiteSpace((char)i)) { yield return (char)i; }
         }
     }
