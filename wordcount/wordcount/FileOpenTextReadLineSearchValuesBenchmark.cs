@@ -15,13 +15,13 @@ public static class FileOpenTextReadLineSearchValuesBenchmark
             lineCount++;
             charCount += line.Length;
             ReadOnlySpan<char> text = line.AsSpan().TrimStart();
-            int index = 0;
 
             if (text.Length is 0)
             {
                 continue;
             }
 
+            int index = 0;
             while ((index = text.IndexOfAny(BenchmarkValues.WhitespaceSearchValuesNoLineBreak)) > 0)
             {
                 wordCount++;
