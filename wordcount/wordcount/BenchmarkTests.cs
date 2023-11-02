@@ -3,7 +3,7 @@ using BenchmarkDotNet.Attributes;
 namespace BenchmarkTests;
 
 [HideColumns("Error", "StdDev", "Median", "RatioSD")]
-// [MemoryDiagnoser]
+[MemoryDiagnoser]
 public class BenchmarkTests
 {
     [Params("Clarissa_Harlowe/summary.md","Clarissa_Harlowe/clarissa_volume1.txt")]
