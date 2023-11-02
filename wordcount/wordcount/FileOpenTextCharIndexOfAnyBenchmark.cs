@@ -1,4 +1,3 @@
-
 using System.Buffers;
 using BenchmarkData;
 
@@ -12,10 +11,10 @@ public static class FileOpenTextCharIndexOfAnyBenchmark
         bool wasSpace = true;
 
         char[] buffer = ArrayPool<char>.Shared.Rent(BenchmarkValues.Size);
-        using var stream = File.OpenText(path);
+        using StreamReader reader = File.OpenText(path);
 
         int count = 0;
-        while ((count = stream.Read(buffer)) > 0)
+        while ((count = reader.Read(buffer)) > 0)
         {
             charCount += count;
             Span<char> chars = buffer.AsSpan(0, count);

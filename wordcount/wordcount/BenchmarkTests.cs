@@ -3,7 +3,7 @@ using BenchmarkDotNet.Attributes;
 namespace BenchmarkTests;
 
 [HideColumns("Error", "StdDev", "Median", "RatioSD")]
-[MemoryDiagnoser]
+// [MemoryDiagnoser]
 public class BenchmarkTests
 {
     [Params("Clarissa_Harlowe/summary.md","Clarissa_Harlowe/clarissa_volume1.txt")]
@@ -16,6 +16,9 @@ public class BenchmarkTests
     public void FileOpenCharSearchValues() => FileOpenCharSearchValuesBenchmark.FileOpenCharSearchValuesBenchmark.Count(FilePath);
 
     [Benchmark]
+    public void FileOpenHandleChar() => FileOpenHandleCharBenchmark.FileOpenHandleCharBenchmark.Count(FilePath);
+
+    [Benchmark]
     public void FileOpenHandleRune() => FileOpenHandleRuneBenchmark.FileOpenHandleRuneBenchmark.Count(FilePath);
 
     [Benchmark]
@@ -23,6 +26,9 @@ public class BenchmarkTests
 
     [Benchmark]
     public void FileOpenTextChar() => FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count(FilePath);
+
+    [Benchmark]
+    public void FileOpenTextCharLines() => FileOpenTextCharLinesBenchmark.FileOpenTextCharLinesBenchmark.Count(FilePath);
 
     [Benchmark]
     public void FileOpenTextCharIndexOfAny() => FileOpenTextCharIndexOfAnyBenchmark.FileOpenTextCharIndexOfAnyBenchmark.Count(FilePath);

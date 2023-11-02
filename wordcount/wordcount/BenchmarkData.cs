@@ -25,9 +25,11 @@ public static class BenchmarkValues
         [
             new(nameof(FileOpenHandleCharSearchValuesBenchmark), FileOpenHandleCharSearchValuesBenchmark.FileOpenHandleCharSearchValuesBenchmark.Count),
             new(nameof(FileOpenCharSearchValuesBenchmark), FileOpenCharSearchValuesBenchmark.FileOpenCharSearchValuesBenchmark.Count),
+            new(nameof(FileOpenHandleCharBenchmark), FileOpenHandleCharBenchmark.FileOpenHandleCharBenchmark.Count),
             new(nameof(FileOpenHandleRuneBenchmark), FileOpenHandleRuneBenchmark.FileOpenHandleRuneBenchmark.Count),
             new(nameof(FileOpenHandleAsciiCheatBenchmark), FileOpenHandleAsciiCheatBenchmark.FileOpenHandleAsciiCheatBenchmark.Count),
             new(nameof(FileOpenTextCharBenchmark), FileOpenTextCharBenchmark.FileOpenTextCharBenchmark.Count),
+            new(nameof(FileOpenTextCharLinesBenchmark), FileOpenTextCharLinesBenchmark.FileOpenTextCharLinesBenchmark.Count),
             new(nameof(FileOpenTextCharSearchValuesBenchmark), FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count),
             new(nameof(FileOpenTextCharIndexOfAnyBenchmark), FileOpenTextCharIndexOfAnyBenchmark.FileOpenTextCharIndexOfAnyBenchmark.Count),
             new(nameof(FileOpenTextReadLineBenchmark), FileOpenTextReadLineBenchmark.FileOpenTextReadLineBenchmark.Count),

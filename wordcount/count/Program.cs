@@ -1,15 +1,13 @@
 ﻿using System.Runtime.InteropServices.Marshalling;
 using BenchmarkData;
+using Counter;
 
 string path = args.Length > 0 ? args[0] : "";
-int counterIndex = args.Length > 1 && int.TryParse(args[1], out int val) ? val : 0;
-
-var benchmark = BenchmarkValues.Benchmarks[counterIndex];
-Console.WriteLine(benchmark.Name);
+ArgumentNullException.ThrowIfNullOrEmpty(path);
 
 if (File.Exists(path))
 {
-    var count = benchmark.Test(path);
+    var count = FileOpenHandleCharSearchValuesBenchmark.Count(path);
     PrintCount(count);
 }
 else if (Directory.Exists(path))
@@ -18,7 +16,7 @@ else if (Directory.Exists(path))
 
     foreach (var file in Directory.EnumerateFiles(path).Order())
     {
-        var count = benchmark.Test(file);
+        var count = FileOpenHandleCharSearchValuesBenchmark.Count(file);
         PrintCount(count);
 
         lineCount += count.Lines;

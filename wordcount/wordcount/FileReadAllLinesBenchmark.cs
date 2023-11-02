@@ -16,7 +16,7 @@ public static class FileReadAllLinesBenchmark
 
             foreach (var c in line)
             {
-                bool isSpace = Char.IsWhiteSpace(c);
+                bool isSpace = char.IsWhiteSpace(c);
 
                 if (!isSpace && wasSpace)
                 {

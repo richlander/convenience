@@ -1,4 +1,3 @@
-
 using BenchmarkData;
 
 namespace FileReadLinesBenchmark;
@@ -17,7 +16,7 @@ public static class FileReadLinesBenchmark
 
             foreach (var c in line)
             {
-                bool isSpace = Char.IsWhiteSpace(c);
+                bool isSpace = char.IsWhiteSpace(c);
 
                 if (!isSpace && wasSpace)
                 {

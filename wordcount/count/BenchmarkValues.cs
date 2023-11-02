@@ -9,29 +9,10 @@ public static class BenchmarkValues
 {
     public static int Size => 4 * 1024;
 
-    public static char[] WhitespaceValues = GetWhiteSpaceChars().ToArray();
+    public static char[] WhitespaceValues = [ (char)9, (char)10, (char)11, (char)12, (char)13, (char)32, (char)133, (char)160, (char)5760, (char)8192, (char)8193, (char)8194, (char)8195, (char)8196, (char)8197, (char)8198, (char)8199, (char)8200, (char)8201, (char)8202, (char)8232, (char)8233, (char)8239, (char)8287, (char)12288];
 
     public static SearchValues<char> WhitespaceSearchValues = SearchValues.Create(WhitespaceValues);
-
-    public static IEnumerable<char> GetWhiteSpaceChars()
-    {
-        for (int i = char.MinValue; i <= char.MaxValue; i++)
-        {
-            if (char.IsWhiteSpace((char)i)) { yield return (char)i; }
-        }
-    }
-
-    public static List<Benchmark> Benchmarks => 
-    [
-        new(nameof(FileOpenHandleCharSearchValuesBenchmark), FileOpenHandleCharSearchValuesBenchmark.FileOpenHandleCharSearchValuesBenchmark.Count),
-        new(nameof(FileOpenCharSearchValuesBenchmark), FileOpenCharSearchValuesBenchmark.FileOpenCharSearchValuesBenchmark.Count),
-        new(nameof(FileOpenTextCharSearchValuesBenchmark), FileOpenTextCharSearchValuesBenchmark.FileOpenTextCharSearchValuesBenchmark.Count),
-        new(nameof(FileReadLinesBenchmark), FileReadLinesBenchmark.FileReadLinesBenchmark.Count),
-        new(nameof(FileOpenHandleAsciiCheatBenchmark), FileOpenHandleAsciiCheatBenchmark.FileOpenHandleAsciiCheatBenchmark.Count),
-    ];
 
 }
 
 public record struct Count(long Lines, long Words, long Bytes, string File);
-
-public record Benchmark(string Name, Func<string, Count> Test);

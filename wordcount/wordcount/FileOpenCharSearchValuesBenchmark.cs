@@ -17,7 +17,7 @@ public static class FileOpenCharSearchValuesBenchmark
 
         char[] charBuffer = ArrayPool<char>.Shared.Rent(charBufferSize);
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
-        using var stream = File.Open(path, FileMode.Open, FileAccess.Read);
+        using FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read);
 
         int count = 0;
         while ((count = stream.Read(buffer)) > 0)

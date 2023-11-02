@@ -2,7 +2,7 @@ using System.Buffers;
 using System.Text;
 using BenchmarkData;
 
-namespace FileOpenHandleCharSearchValuesBenchmark;
+namespace Counter;
 
 public static class FileOpenHandleCharSearchValuesBenchmark
 {

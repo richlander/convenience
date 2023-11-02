@@ -1,4 +1,3 @@
-
 using System.Buffers;
 using BenchmarkData;
 
@@ -12,19 +11,20 @@ public static class FileOpenTextCharBenchmark
         bool wasSpace = true;
 
         char[] buffer = ArrayPool<char>.Shared.Rent(BenchmarkValues.Size);
-        using var stream = File.OpenText(path);
+        using StreamReader reader = File.OpenText(path);
 
         int count = 0;
-        while ((count = stream.Read(buffer)) > 0)
+        while ((count = reader.Read(buffer)) > 0)
         {
             charCount += count;
             Span<char> chars = buffer.AsSpan(0, count);
 
-            while (chars.Length > 0)
+            for (int i = 0; i < chars.Length; i++)
             {
-                if (char.IsWhiteSpace(chars[0]))
+                char c = chars[i];
+                if (char.IsWhiteSpace(c))
                 {
-                    if (chars[0] is '\n')
+                    if (c is '\n')
                     {
                         lineCount++;                      
                     }
@@ -36,8 +36,6 @@ public static class FileOpenTextCharBenchmark
                     wordCount++;
                     wasSpace = false;
                 }
-
-                chars = chars.Slice(1);
             }
         }
 

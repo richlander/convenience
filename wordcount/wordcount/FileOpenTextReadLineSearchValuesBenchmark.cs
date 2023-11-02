@@ -1,4 +1,3 @@
-
 using BenchmarkData;
 
 namespace FileOpenTextReadLineSearchValuesBenchmark;

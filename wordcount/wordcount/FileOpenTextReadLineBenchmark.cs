@@ -1,4 +1,3 @@
-
 using BenchmarkData;
 
 namespace FileOpenTextReadLineBenchmark;
@@ -17,9 +16,9 @@ public static class FileOpenTextReadLineBenchmark
             charCount += line.Length;
             bool wasSpace = true;
 
-            foreach (var c in line)
+            for (int i = 0; i < line.Length; i++)
             {
-                bool isSpace = Char.IsWhiteSpace(c);
+                bool isSpace = char.IsWhiteSpace(line[i]);
 
                 if (!isSpace && wasSpace)
                 {
