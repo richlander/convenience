@@ -5,7 +5,7 @@ string path = args.Length > 0 ? args[0] : "";
 char[] buffer = new char[1024];
 using var stream = File.OpenText(path);
 
-Console.WriteLine("codepoint,byte-length,bytes,notes");
+Console.WriteLine("char, codepoint, byte-length, bytes, notes");
 
 int count = 0;
 while ((count = stream.Read(buffer)) > 0)
@@ -17,7 +17,7 @@ while ((count = stream.Read(buffer)) > 0)
         char c = chars[0];
         byte[] bytes = Encoding.UTF8.GetBytes((char[])[c]);
 
-        Console.Write($"{(int)c},{bytes.Length},");
+        Console.Write($"{c}, {(int)c, 6}, {bytes.Length}, ");
 
         var afterFirst = false;
         foreach(byte b in bytes)
