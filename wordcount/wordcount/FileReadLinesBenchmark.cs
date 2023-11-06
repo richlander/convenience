@@ -8,13 +8,13 @@ public static class FileReadLinesBenchmark
     {
         long wordCount = 0, lineCount = 0, charCount = 0;
 
-        foreach (var line in File.ReadLines(path))
+        foreach (string line in File.ReadLines(path))
         {
             lineCount++;
             charCount += line.Length;
             bool wasSpace = true;
 
-            foreach (var c in line)
+            foreach (char c in line)
             {
                 bool isSpace = char.IsWhiteSpace(c);
 

@@ -31,7 +31,7 @@ while ((count = stream.Read(buffer)) > 0)
                 afterFirst = true;
             }
 
-            PrintBinary(b);
+            Console.Write(b.ToString("B"));
         }
         
         var notes = char.IsWhiteSpace(c) ? "whitespace" : "";
@@ -39,16 +39,4 @@ while ((count = stream.Read(buffer)) > 0)
 
         chars = chars.Slice(1);
     }
-}
-
-void PrintBinary(byte b)
-{
-    int mask = 128;
-    for (int i = 0; i < 8; i++)
-    {
-        int val = (b & mask) > 0 ? 1 : 0;
-        Console.Write(val);
-        mask >>= 1;
-    }
-
 }

@@ -12,7 +12,7 @@ public static class FileOpenHandleRuneBenchmark
         bool wasSpace = true;
 
         byte[] buffer = ArrayPool<byte>.Shared.Rent(BenchmarkValues.Size);
-        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
+        using Microsoft.Win32.SafeHandles.SafeFileHandle handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.SequentialScan);
         int index = 0;
 
         // Read content in chunks, in buffer, at count lenght, starting at byteCount
@@ -25,7 +25,7 @@ public static class FileOpenHandleRuneBenchmark
 
             while (bytes.Length > 0)
             {
-                var status = Rune.DecodeFromUtf8(bytes, out Rune rune, out int bytesConsumed);
+                OperationStatus status = Rune.DecodeFromUtf8(bytes, out Rune rune, out int bytesConsumed);
 
                 // bad read due to low buffer length
                 if (status == OperationStatus.NeedMoreData && count > 0)
