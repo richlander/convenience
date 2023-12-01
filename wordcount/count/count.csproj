@@ -5,10 +5,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PublishAot>true</PublishAot>
     <PublishTrimmed>true</PublishTrimmed>
+    <RuntimeIdentifier>wasi-wasm</RuntimeIdentifier>
+    <WasmSingleFileBundle>true</WasmSingleFileBundle>
+    <!-- <PublishAot>true</PublishAot>
     <OptimizationPreference>Speed</OptimizationPreference>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <InvariantGlobalization>true</InvariantGlobalization> -->
   </PropertyGroup>
 
 </Project>

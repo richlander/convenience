@@ -1,9 +1,12 @@
-﻿using System.Runtime.InteropServices.Marshalling;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices.Marshalling;
 using BenchmarkData;
 using Counter;
 
+var stopwatch = Stopwatch.StartNew();
 string path = args.Length > 0 ? args[0] : "";
 ArgumentNullException.ThrowIfNullOrEmpty(path);
+
 
 if (File.Exists(path))
 {
@@ -30,6 +33,11 @@ else
 {
     Console.WriteLine("Please specify a file or directory.");
 }
+
+stopwatch.Stop();
+
+Console.WriteLine($"Elapsed time (ms): {stopwatch.ElapsedMilliseconds}");
+Console.WriteLine($"Elapsed time (us): {stopwatch.Elapsed.TotalMicroseconds}");
 
 void PrintCount(Count count)
 {
