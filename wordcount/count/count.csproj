@@ -37,7 +37,7 @@
     <WasmSingleFileBundle>true</WasmSingleFileBundle>
   </PropertyGroup>
   
-  <PropertyGroup Condition="'$(TestaAotMode)' == 'native'">
+  <PropertyGroup Condition="'$(TestAotMode)' == 'native'">
     <TargetFramework>net8.0</TargetFramework>
     <PublishAot>true</PublishAot>
     <!-- <OptimizationPreference>Speed</OptimizationPreference> -->
