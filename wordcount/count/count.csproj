@@ -1,14 +1,51 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Use TestAotMode=mono to test mono AOT
+    Use TestAotMode=native to test NativeAOT
+    Use TestAotMode=none to test interpreter
 
+    Insall the wasi-wasm workload using
+    `dotnet workload install wasi-experimental`
+
+    For mono use `dotnet publish` 
+    ./bin/Release/net9.0/wasi-wasm/AppBundle/count.wasm
+    -->
   <PropertyGroup>
+    <TestAotMode Condition="'$(TestAotMode)' == ''">none</TestAotMode>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PublishAot>true</PublishAot>
     <PublishTrimmed>true</PublishTrimmed>
-    <OptimizationPreference>Speed</OptimizationPreference>
+    <TrimMode>full</TrimMode>
+    <RuntimeIdentifier>wasi-wasm</RuntimeIdentifier>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TestAotMode)' == 'none'">
+    <!-- net8.0 is also supported -->
+    <TargetFramework>net9.0</TargetFramework>
+    <WasmEnableSIMD>true</WasmEnableSIMD>
+    <WasmSingleFileBundle>true</WasmSingleFileBundle>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TestAotMode)' == 'mono'">
+    <!-- net9.0 is required -->
+    <TargetFramework>net9.0</TargetFramework>
+    <WasmEnableSIMD>true</WasmEnableSIMD>
+    <RunAOTCompilation>true</RunAOTCompilation>
+    <WasmSingleFileBundle>true</WasmSingleFileBundle>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(TestAotMode)' == 'native'">
+    <TargetFramework>net8.0</TargetFramework>
+    <PublishAot>true</PublishAot>
+    <!-- <OptimizationPreference>Speed</OptimizationPreference> -->
+  </PropertyGroup>
+
+
+  <ItemGroup Condition="'$(TestAotMode)' == 'native'">
+      <PackageReference Include="WasmComponent.Sdk" Version="0.1.0-preview00026" />
+  </ItemGroup>
 
 </Project>
