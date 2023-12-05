@@ -9,8 +9,13 @@
     <RuntimeIdentifier>wasi-wasm</RuntimeIdentifier>
     <WasmSingleFileBundle>true</WasmSingleFileBundle>
     <!-- <PublishAot>true</PublishAot>
-    <OptimizationPreference>Speed</OptimizationPreference>
-    <InvariantGlobalization>true</InvariantGlobalization> -->
+    <OptimizationPreference>Speed</OptimizationPreference> -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <UseAppHost>false</UseAppHost>
   </PropertyGroup>
+
+  <ItemGroup>
+      <PackageReference Include="WasmComponent.Sdk" Version="0.1.0-preview00026" />
+  </ItemGroup>
 
 </Project>
