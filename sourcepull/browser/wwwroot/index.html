@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Source pull Browser/Wasm probe</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preload" id="webassembly">
+  <script type="importmap"></script>
+  <script type="module" src="main#[.{fingerprint}].js"></script>
+  <style>
+    body {
+      font: 14px/1.5 system-ui, sans-serif;
+      margin: 2rem;
+    }
+
+    pre {
+      background: #f4f4f4;
+      overflow: auto;
+      padding: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Source pull Browser/Wasm probe</h1>
+  <p>
+    The Web Stream remains cold until its reader pulls. Each pull asks the same
+    managed Source session for at most 4096 encoded bytes.
+  </p>
+  <button id="run" disabled>Run measurements</button>
+  <strong id="status">Loading .NET...</strong>
+  <pre id="output"></pre>
+</body>
+</html>
